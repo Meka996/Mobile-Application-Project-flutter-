@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "458192247285",
+    "project_id": "velora-fashion-store-a181a",
+    "storage_bucket": "velora-fashion-store-a181a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458192247285:android:7ad0cf518e40fb454b28bc",
+        "android_client_info": {
+          "package_name": "com.example.velora"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9TJJjYoiHxpYHmPZXccU7zUBwTO7Gja8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
