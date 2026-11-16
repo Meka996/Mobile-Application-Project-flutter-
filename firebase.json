@@ -1,0 +1,28 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "velora-fashion-store-a181a",
+          "appId": "1:458192247285:android:7ad0cf518e40fb454b28bc",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "velora-fashion-store-a181a",
+          "configurations": {
+            "android": "1:458192247285:android:7ad0cf518e40fb454b28bc",
+            "web": "1:458192247285:web:151c03677e23390f4b28bc"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "europe-west3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
