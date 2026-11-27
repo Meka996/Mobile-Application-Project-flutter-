@@ -59,7 +59,7 @@ class OrderDetailScreen extends StatelessWidget {
           const Divider(height: 32),
 
           // ── Totals (snapshot)
-          _SummaryRow('Items total',
+          _SummaryRow('Order total',
               '\$${order.total.toStringAsFixed(2)}'),
           const SizedBox(height: 4),
           const Text(
@@ -76,8 +76,8 @@ class OrderDetailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(
-              'Orders are read-only. No payment has been processed and stock '
-              'has not been decremented. This is a demonstration-grade checkout.',
+              'Orders are read-only. Inventory was updated when the order was placed. '
+              'No payment has been processed; this is a demonstration checkout.',
               style: TextStyle(fontSize: 11, color: Color(0xFF888888)),
             ),
           ),
