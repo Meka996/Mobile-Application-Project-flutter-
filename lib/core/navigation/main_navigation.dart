@@ -1,6 +1,5 @@
-// LOCAL INTEGRATION TEST VERSION - only for the branch mohamed-integration-test.
-// Copy over lib/core/navigation/main_navigation.dart on that branch.
-// Hassan (Task A) owns the real version of this file.
+// Integration candidate for mohamed-integeration-test. Core owner review is
+// required before merging this shared navigation file.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -161,10 +160,6 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
             label: 'Wishlist',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            label: 'Cart',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
