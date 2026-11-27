@@ -14,6 +14,20 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function validCartFields(data) {
+      return data.keys().hasOnly([
+          'productId', 'size', 'color', 'quantity', 'updatedAt'
+        ])
+        && data.keys().hasAll([
+          'productId', 'size', 'color', 'quantity', 'updatedAt'
+        ])
+        && data.productId is string && data.productId.size() > 0
+        && data.size is string && data.size.size() > 0
+        && data.color is string && data.color.size() > 0
+        && data.quantity is int && data.quantity > 0
+        && data.updatedAt is timestamp;
+    }
+
     function validCartProduct(productId, quantity) {
       let productPath = /databases/$(database)/documents/products/$(productId);
       return exists(productPath)
@@ -51,35 +65,35 @@ service cloud.firestore {
 
       match /cart/{itemId} {
         allow read, delete: if isOwner(userId);
-        allow create, update: if isOwner(userId)
-          && request.resource.data.keys().hasOnly([
-            'productId', 'size', 'color', 'quantity', 'updatedAt'
-          ])
-          && request.resource.data.keys().hasAll([
-            'productId', 'size', 'color', 'quantity', 'updatedAt'
-          ])
-          && request.resource.data.productId is string
-          && request.resource.data.productId.size() > 0
-          && request.resource.data.size is string
-          && request.resource.data.size.size() > 0
-          && request.resource.data.color is string
-          && request.resource.data.color.size() > 0
-          && request.resource.data.quantity is int
-          && request.resource.data.quantity > 0
-          && request.resource.data.updatedAt is timestamp
+
+        // New and increased quantities must fit the current stock.
+        allow create: if isOwner(userId)
+          && validCartFields(request.resource.data)
+          && validCartProduct(
+            request.resource.data.productId,
+            request.resource.data.quantity
+          );
+
+        // A user may always reduce an existing line, even if the product
+        // was subsequently deactivated or deleted. Increases re-check stock.
+        allow update: if isOwner(userId)
+          && validCartFields(request.resource.data)
           && (
             (
               request.resource.data.diff(resource.data).affectedKeys()
                 .hasOnly(['quantity', 'updatedAt'])
               && request.resource.data.quantity < resource.data.quantity
             )
-            || validCartProduct(request.resource.data.productId, request.resource.data.quantity)
+            || validCartProduct(
+              request.resource.data.productId,
+              request.resource.data.quantity
+            )
           );
       }
 
       match /orders/{orderId} {
-        // Orders are created only by the trusted placeOrder callable function.
         allow read: if isOwner(userId);
+        // Only the trusted Admin-SDK callable function may create orders.
         allow create, update, delete: if false;
       }
     }
