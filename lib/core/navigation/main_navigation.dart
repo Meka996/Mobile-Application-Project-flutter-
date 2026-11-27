@@ -98,6 +98,20 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // ---- Task D -> Task E: checkout hand-off -------------------------------
 
+  void _openCart() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CartScreen(
+          showAppBar: true,
+          onCheckout: _openCheckout,
+          onShopPressed: () => Navigator.of(context).pop(),
+          onSignInRequested: () => Navigator.of(context).pop(),
+          onOpenProduct: _openProductById,
+        ),
+      ),
+    );
+  }
+
   void _openCheckout(CartSnapshot cart) {
     if (!cart.canCheckout) {
       _say('Please fix unavailable cart items before checkout.');
@@ -117,20 +131,20 @@ class _MainNavigationState extends State<MainNavigation> {
         showAppBar: true,
         onOpenProduct: _openProductById,
         onShopPressed: () => _select(1),
-        onSignInRequested: () => _select(4),
-      ),
-      CartScreen(
-        showAppBar: true,
-        onCheckout: _openCheckout,
-        onShopPressed: () => _select(1),
-        onSignInRequested: () => _select(4),
-        onOpenProduct: _openProductById,
+        onSignInRequested: () => _select(3),
       ),
       const AuthGate(),
     ];
 
     return Scaffold(
       body: IndexedStack(index: selectedIndex, children: screens),
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: _openCart,
+        backgroundColor: AppTheme.deepRose,
+        foregroundColor: Colors.white,
+        tooltip: 'Open cart',
+        child: const Icon(Icons.shopping_bag_outlined),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         type: BottomNavigationBarType.fixed,
