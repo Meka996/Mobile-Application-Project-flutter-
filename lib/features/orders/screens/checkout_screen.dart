@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/cart_reader.dart';
 import '../services/order_repository.dart';
-import '../models/order_item.dart';
 import '../widgets/order_item_tile.dart';
 import 'order_confirmation_screen.dart';
 
@@ -41,7 +40,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _submitError;
 
   static const double _shippingThreshold = 150.0;
-  static const double _taxRate = 0.08;
 
   double get _shipping =>
       (_cart?.total ?? 0) >= _shippingThreshold ? 0.0 : 9.99;
