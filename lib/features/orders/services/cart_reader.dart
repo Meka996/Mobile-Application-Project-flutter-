@@ -77,6 +77,16 @@ class CartReader {
         issues.add('Only $rawStock units remain for ${product['name'] ?? 'a product'}.');
         continue;
       }
+      final sizes = product['sizes'];
+      final colors = product['colors'];
+      if (sizes is List && sizes.isNotEmpty && !sizes.contains(entry.size)) {
+        issues.add('A selected size is no longer available.');
+        continue;
+      }
+      if (colors is List && colors.isNotEmpty && !colors.contains(entry.color)) {
+        issues.add('A selected color is no longer available.');
+        continue;
+      }
       final unitPrice = rawPrice.toDouble();
       items.add(OrderItem(
         productId: entry.productId,
