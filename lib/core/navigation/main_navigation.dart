@@ -99,6 +99,10 @@ class _MainNavigationState extends State<MainNavigation> {
   // ---- Task D -> Task E: checkout hand-off -------------------------------
 
   void _openCheckout(CartSnapshot cart) {
+    if (!cart.canCheckout) {
+      _say('Please fix unavailable cart items before checkout.');
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const CheckoutScreen()),
     );
