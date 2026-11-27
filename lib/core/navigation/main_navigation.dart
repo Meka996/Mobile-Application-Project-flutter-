@@ -103,8 +103,14 @@ class _MainNavigationState extends State<MainNavigation> {
         builder: (_) => CartScreen(
           showAppBar: true,
           onCheckout: _openCheckout,
-          onShopPressed: () => Navigator.of(context).pop(),
-          onSignInRequested: () => Navigator.of(context).pop(),
+          onShopPressed: () {
+            Navigator.of(context).pop();
+            _select(1);
+          },
+          onSignInRequested: () {
+            Navigator.of(context).pop();
+            _select(3);
+          },
           onOpenProduct: _openProductById,
         ),
       ),
