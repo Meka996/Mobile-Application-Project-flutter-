@@ -45,7 +45,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   double get _shipping =>
       (_cart?.total ?? 0) >= _shippingThreshold ? 0.0 : 9.99;
-  double get _tax => (_cart?.total ?? 0) * _taxRate;
+  double get _tax {
+    final subtotalCents = ((_cart?.total ?? 0) * 100).round();
+    return (subtotalCents * 8 / 100).round() / 100;
+  }
   double get _grandTotal => (_cart?.total ?? 0) + _shipping + _tax;
 
   @override
