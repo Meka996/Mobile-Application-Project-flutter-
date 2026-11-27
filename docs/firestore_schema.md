@@ -81,6 +81,8 @@ Initial order status: placed
 - Store dates as Firestore Timestamps.
 - Never store passwords or private credentials.
 - Validate quantity, price, and order data.
-- Order totals must be verified against trusted prices
-  before the system can be considered production-ready.
+- The `placeOrder` callable in `functions/index.js` is the only client-facing order creation path. It calculates item prices from `products`, validates stock and variants, applies shipping/tax, decrements stock, creates the order and clears cart documents transactionally.
+- Firestore client rules deny direct order creation, update and deletion. Admin SDK writes from the callable bypass client rules.
+- Deploy both the callable and Firestore rules before testing: `firebase deploy --only functions:placeOrder,firestore:rules`.
+- Current demo checkout policy: free shipping at $150, otherwise $9.99, plus 8% tax. No payment gateway or real charge is implemented.
 - All team members must agree on schema changes.
