@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/cart_line.dart';
+import '../models/product_info.dart';
 import 'product_reader.dart';
 import 'wishlist_cart_errors.dart';
 
@@ -85,16 +86,6 @@ class CartRepository {
 
     final collection = _cart(); // also checks the user is signed in
 
-    final product = await _products.fetchOne(productId);
-    if (product == null || !product.isActive) {
-      throw const ProductUnavailableException(
-        'This product is no longer available.',
-      );
-    }
-    if (product.stock <= 0) {
-      throw const ProductUnavailableException('This product is out of stock.');
-    }
-
     final ref = collection.doc(
       cartItemIdFor(productId: productId, size: cleanSize, color: cleanColor),
     );
@@ -102,7 +93,14 @@ class CartRepository {
     // A transaction re-reads the document and retries if another write
     // happened in between, so fast double taps never lose an increment.
     await _db.runTransaction<void>((tx) async {
+      final productSnap = await tx.get(_db.collection('products').doc(productId));
       final snap = await tx.get(ref);
+      final productData = productSnap.data();
+      if (!productSnap.exists || productData == null ||
+          ProductInfo.fromMap(productId, productData).isPurchasable == false) {
+        throw const ProductUnavailableException('This product is no longer available or is out of stock.');
+      }
+      final product = ProductInfo.fromMap(productId, productData);
       final current = snap.exists ? _readQuantity(snap.data()) : 0;
       final next = current + quantity;
       if (next > product.stock) {
@@ -140,13 +138,27 @@ class CartRepository {
     return _db.runTransaction<void>((tx) async {
       final snap = await tx.get(ref);
       if (!snap.exists) return; // already removed elsewhere
-      final next = _readQuantity(snap.data()) + delta;
+      final data = snap.data();
+      final productId = data?['productId'];
+      if (productId is! String || productId.isEmpty) {
+        throw const ProductUnavailableException('This cart item is invalid. Remove it and try again.');
+      }
+      final productSnap = await tx.get(_db.collection('products').doc(productId));
+      final productData = productSnap.data();
+      if (!productSnap.exists || productData == null) {
+        throw const ProductUnavailableException('This product is no longer available.');
+      }
+      final product = ProductInfo.fromMap(productId, productData);
+      if (!product.isPurchasable) {
+        throw const ProductUnavailableException('This product is no longer available.');
+      }
+      final next = _readQuantity(data) + delta;
       if (next <= 0) {
         tx.delete(ref);
         return;
       }
-      if (delta > 0 && maxQuantity != null && next > maxQuantity) {
-        throw ProductUnavailableException('Only $maxQuantity left in stock.');
+      if (next > product.stock) {
+        throw ProductUnavailableException('Only ${product.stock} left in stock.');
       }
       tx.update(ref, {
         'quantity': next,
