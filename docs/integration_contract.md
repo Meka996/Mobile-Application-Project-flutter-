@@ -61,8 +61,7 @@ Cart: Task D
 Checkout: Task E
 Order History: Task E
 
-The Core owner integrates delivered screens
-into the application's navigation.
+The Core owner integrates delivered screens into the application's navigation. The agreed bottom navigation remains Home, Shop, Wishlist and Profile; Cart is a separate screen opened from an app-bar/cart action, not an additional bottom tab.
 
 ## 4. Design Contract
 
@@ -90,8 +89,8 @@ Database:
 Firestore Structure:
 See docs/firestore_schema.md
 
-All features must use the agreed collection
-paths and field names.
+All features must use the agreed collection paths and field names.
+Checkout must call the trusted `placeOrder` Firebase callable in `functions/`. The function recalculates totals from product documents, validates selected variants and stock, decrements inventory, writes the order and clears the cart in one Firestore transaction.
 
 Authentication uses Firebase Authentication.
 
@@ -111,7 +110,7 @@ feature/core-integration
 Feature Branches:
 feature/auth
 feature/catalog
-feature/wishlist-cart
+mohamed-integeration-test (Task D integration branch)
 feature/orders
 
 Each member must:
