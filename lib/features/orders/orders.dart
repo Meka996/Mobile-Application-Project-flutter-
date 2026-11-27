@@ -1,4 +1,4 @@
-/// Entry-point barrel for the orders feature.
+// Entry-point barrel for the orders feature.
 /// Mohamed Hassan's router imports from here, not individual files.
 ///
 /// Navigation handshake:
