@@ -1,7 +1,6 @@
 # Wishlist & Cart (Task D, Mohamed Adel)
 
-Branch: `feature/wishlist-cart`. All code lives in `lib/features/wishlist_cart/`.
-No Core files, rules or docs are changed.
+Working branch: `mohamed-integeration-test`. Feature code lives in `lib/features/wishlist_cart/`; integration also touches the shared navigation, Firestore rules, Firebase configuration and order checkout. Coordinate shared-file changes with the Core and Orders owners.
 
 ## Files
 | File | Purpose |
@@ -70,4 +69,7 @@ The Checkout button is hidden when `onCheckout` is null (no dead buttons).
 - Not compiled or run in my environment (no Flutter SDK there): run `flutter pub get`, `flutter analyze`, `flutter test` before the PR.
 - Cart prices are read live, so there is no "price changed" notice, the total is just always current.
 - Transactions need a connection, so favorites/cart writes fail offline instead of queuing (intentional: no false success).
-- Rules do not verify stock, so over-ordering is prevented in app code only.
+- Cart rules validate the referenced product is active and that the requested quantity does not exceed current stock.
+- Checkout calls the trusted `placeOrder` Firebase callable. It re-reads cart/products in a transaction, validates current prices and stock, decrements inventory, creates the order and clears cart lines atomically.
+- Deploy the Cloud Function and Firestore rules before testing checkout: `firebase deploy --only functions:placeOrder,firestore:rules`.
+- The server applies the same demo pricing policy as checkout: free shipping at $150, otherwise $9.99, plus 8% tax. No payment provider is integrated.
