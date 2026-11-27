@@ -101,6 +101,14 @@ class CartRepository {
         throw const ProductUnavailableException('This product is no longer available or is out of stock.');
       }
       final product = ProductInfo.fromMap(productId, productData);
+      final sizes = productData['sizes'];
+      final colors = productData['colors'];
+      if (sizes is List && sizes.isNotEmpty && !sizes.contains(cleanSize)) {
+        throw const ProductUnavailableException('Please choose an available size.');
+      }
+      if (colors is List && colors.isNotEmpty && !colors.contains(cleanColor)) {
+        throw const ProductUnavailableException('Please choose an available color.');
+      }
       final current = snap.exists ? _readQuantity(snap.data()) : 0;
       final next = current + quantity;
       if (next > product.stock) {
