@@ -87,11 +87,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final orderId = await _orderRepo.placeOrder(
-        items: cart.items,
-        total: _grandTotal,
-        cartItemIds: cart.cartItemIds,
-      );
+      if (!cart.canCheckout) {
+        throw Exception('Please fix all unavailable or invalid cart items first.');
+      }
+      final orderId = await _orderRepo.placeOrder();
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -141,6 +140,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildBody() {
     final cart = _cart!;
     final isEmpty = cart.isEmpty;
+    final canCheckout = cart.canCheckout;
 
     return Column(
       children: [
@@ -193,7 +193,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '⚠ Totals are client-calculated and not payment-grade. No real charge is processed.',
+                  'Final price and stock are verified securely when you place the order. No payment is charged.',
                   style: TextStyle(fontSize: 11, color: Color(0xFF999999)),
                 ),
               ],
@@ -215,7 +215,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: (isEmpty || _submitting) ? null : _placeOrder,
+                onPressed: (!canCheckout || _submitting) ? null : _placeOrder,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFC45D75),
                   disabledBackgroundColor: const Color(0xFFE8A8B4),
@@ -229,7 +229,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                     : Text(
-                        isEmpty ? 'Add Items to Order' : 'Place Order',
+                        isEmpty ? 'Add Items to Order' : (canCheckout ? 'Place Order' : 'Fix Cart Items'),
                         style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
