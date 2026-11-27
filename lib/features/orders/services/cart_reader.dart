@@ -1,24 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/order_item.dart';
 
-/// Reads the signed-in user's live cart from Firestore and
-/// cross-references product prices from the products collection.
-///
-/// Cart schema (Task D):
-///   users/{uid}/cart/{cartItemId}: productId, size, color, quantity, updatedAt
-///
-/// Product schema (Task C):
-///   products/{productId}: name, price, isActive, sizes, colors, ...
-///
-/// This reader returns only active items; it re-fetches prices from
-/// products to reflect current catalogue values before checkout.
-/// Totals are client-calculated — NOT payment-grade.
+/// Resolves cart entries against current catalogue data before checkout.
+/// This is a UI pre-check only; the callable function validates again
+/// transactionally and is the authority for prices and stock.
 class CartReader {
-  CartReader({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+  CartReader({FirebaseFirestore? firestore, FirebaseAuth? auth})
+      : _firestore = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore;
@@ -26,81 +16,87 @@ class CartReader {
 
   String? get _uid => _auth.currentUser?.uid;
 
-  /// Returns a resolved list of [OrderItem] ready for checkout, plus
-  /// the matching cart document IDs (for atomic cart clearing) and
-  /// a client-calculated [total].
   Future<CartSnapshot> readCart() async {
     final uid = _uid;
     if (uid == null) throw Exception('User not signed in');
 
-    // 1. Fetch cart documents
     final cartSnap = await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('cart')
-        .get();
+        .collection('users').doc(uid).collection('cart').get();
 
     if (cartSnap.docs.isEmpty) {
-      return CartSnapshot(items: [], cartItemIds: [], total: 0.0, issues: []);
+      return const CartSnapshot(items: [], cartItemIds: [], total: 0, issues: []);
     }
 
-    // 2. Collect product IDs to fetch (deduplicated)
-    final productIds =
-        cartSnap.docs.map((d) => d['productId'] as String).toSet().toList();
+    final entries = <({String id, String productId, String size, String color, int quantity})>[];
+    final issues = <String>[];
+    for (final doc in cartSnap.docs) {
+      final data = doc.data();
+      final productId = data['productId'];
+      final size = data['size'];
+      final color = data['color'];
+      final quantity = data['quantity'];
+      if (productId is! String || productId.isEmpty ||
+          size is! String || size.trim().isEmpty ||
+          color is! String || color.trim().isEmpty ||
+          quantity is! int || quantity < 1) {
+        issues.add('A cart item has invalid data. Remove it before checkout.');
+        continue;
+      }
+      entries.add((id: doc.id, productId: productId, size: size,
+        color: color, quantity: quantity));
+    }
 
-    // Firestore whereIn supports up to 30 items; handle overflow gracefully
-    final productDocs = <String, Map<String, dynamic>>{};
-    for (var i = 0; i < productIds.length; i += 30) {
-      final batch = productIds.sublist(
-          i, i + 30 > productIds.length ? productIds.length : i + 30);
-      final snap = await _firestore
-          .collection('products')
-          .where(FieldPath.documentId, whereIn: batch)
-          .get();
-      for (final d in snap.docs) {
-        productDocs[d.id] = d.data();
+    final ids = entries.map((e) => e.productId).toSet().toList();
+    final products = <String, Map<String, dynamic>>{};
+    for (var i = 0; i < ids.length; i += 30) {
+      final batch = ids.sublist(i, i + 30 > ids.length ? ids.length : i + 30);
+      final result = await _firestore.collection('products')
+          .where(FieldPath.documentId, whereIn: batch).get();
+      for (final doc in result.docs) {
+        products[doc.id] = doc.data();
       }
     }
 
-    // 3. Build OrderItem list; flag issues for missing/inactive products
     final items = <OrderItem>[];
     final cartItemIds = <String>[];
-    final issues = <String>[];
-    double total = 0.0;
-
-    for (final cartDoc in cartSnap.docs) {
-      final data = cartDoc.data();
-      final productId = data['productId'] as String? ?? '';
-      final product = productDocs[productId];
-
-      if (product == null) {
-        issues.add('Product $productId not found — item skipped');
+    var totalCents = 0;
+    for (final entry in entries) {
+      final product = products[entry.productId];
+      if (product == null || product['isActive'] != true) {
+        issues.add('A product in your cart is no longer available.');
         continue;
       }
-      if (product['isActive'] == false) {
-        issues.add('${product['name']} is unavailable — item skipped');
+      final rawPrice = product['price'];
+      final rawStock = product['stock'];
+      if (rawPrice is! num || rawPrice <= 0 ||
+          rawStock is! int || rawStock <= 0) {
+        issues.add('A product in your cart has invalid price or stock data.');
         continue;
       }
-
-      final unitPrice = (product['price'] as num?)?.toDouble() ?? 0.0;
-      final quantity = (data['quantity'] as num?)?.toInt() ?? 1;
-      final item = OrderItem(
-        productId: productId,
-        name: product['name'] as String? ?? '',
-        size: data['size'] as String? ?? '',
-        color: data['color'] as String? ?? '',
-        quantity: quantity,
+      if (entry.quantity > rawStock) {
+        issues.add('Only $rawStock units remain for ${product['name'] ?? 'a product'}.');
+        continue;
+      }
+      final unitPrice = rawPrice.toDouble();
+      items.add(OrderItem(
+        productId: entry.productId,
+        name: product['name'] is String ? product['name'] as String : 'Product',
+        size: entry.size,
+        color: entry.color,
+        quantity: entry.quantity,
         unitPrice: unitPrice,
-      );
-      items.add(item);
-      cartItemIds.add(cartDoc.id);
-      total += item.lineTotal;
+      ));
+      cartItemIds.add(entry.id);
+      totalCents += (unitPrice * 100).round() * entry.quantity;
     }
 
+    if (cartSnap.docs.length > 20) {
+      issues.add('Orders are limited to 20 different cart items. Remove some items to continue.');
+    }
     return CartSnapshot(
       items: items,
       cartItemIds: cartItemIds,
-      total: total,
+      total: totalCents / 100,
       issues: issues,
     );
   }
@@ -110,9 +106,7 @@ class CartSnapshot {
   final List<OrderItem> items;
   final List<String> cartItemIds;
   final double total;
-  final List<String> issues; // warnings about skipped/unavailable items
-
-  bool get isEmpty => items.isEmpty;
+  final List<String> issues;
 
   const CartSnapshot({
     required this.items,
@@ -120,4 +114,7 @@ class CartSnapshot {
     required this.total,
     required this.issues,
   });
+
+  bool get isEmpty => items.isEmpty;
+  bool get canCheckout => items.isNotEmpty && issues.isEmpty;
 }
