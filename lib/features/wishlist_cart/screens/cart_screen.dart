@@ -138,10 +138,7 @@ class _CartContentState extends State<_CartContent> {
                         ? null
                         : () => open(line.entry.productId),
                     onIncrement: () => _run(
-                      () => widget.repository.increment(
-                        id,
-                        maxQuantity: line.product?.stock,
-                      ),
+                      () => widget.repository.increment(id),
                     ),
                     onDecrement: () => _run(() => widget.repository.decrement(id)),
                     onRemove: () => _run(() => widget.repository.removeItem(id)),
