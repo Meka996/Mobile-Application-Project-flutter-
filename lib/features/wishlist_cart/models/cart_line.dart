@@ -106,6 +106,10 @@ class CartSnapshot {
 
   bool get hasProblems => lines.any((line) => line.problem != null);
 
+  /// Checkout is allowed only when every cart line is currently purchasable
+  /// and every requested quantity is within the product's available stock.
+  /// This prevents unavailable products from being silently skipped at checkout.
   bool get canCheckout =>
-      purchasableLines.isNotEmpty && !lines.any((line) => line.exceedsStock);
+      lines.isNotEmpty &&
+      lines.every((line) => line.isPurchasable && !line.exceedsStock);
 }
