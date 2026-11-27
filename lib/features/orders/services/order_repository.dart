@@ -11,14 +11,17 @@ class OrderRepository {
   OrderRepository({
     FirebaseFunctions? functions,
     FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
   })  : _functions = functions ?? FirebaseFunctions.instanceFor(region: 'europe-west3'),
-        _auth = auth ?? FirebaseAuth.instance;
+        _auth = auth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFunctions _functions;
   final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
 
   CollectionReference<Map<String, dynamic>> _ordersCol(String uid) =>
-      FirebaseFirestore.instance.collection('users').doc(uid).collection('orders');
+      _firestore.collection('users').doc(uid).collection('orders');
 
   Future<String> placeOrder() async {
     if (_auth.currentUser == null) {
