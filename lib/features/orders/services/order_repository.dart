@@ -8,7 +8,7 @@ class OrderRepository {
   OrderRepository({
     FirebaseFunctions? functions,
     FirebaseAuth? auth,
-  })  : _functions = functions ?? FirebaseFunctions.instance,
+  })  : _functions = functions ?? FirebaseFunctions.instanceFor(region: 'europe-west3'),
         _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFunctions _functions;
