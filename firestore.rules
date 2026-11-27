@@ -67,7 +67,14 @@ service cloud.firestore {
           && request.resource.data.quantity is int
           && request.resource.data.quantity > 0
           && request.resource.data.updatedAt is timestamp
-          && validCartProduct(request.resource.data.productId, request.resource.data.quantity);
+          && (
+            (
+              request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['quantity', 'updatedAt'])
+              && request.resource.data.quantity < resource.data.quantity
+            )
+            || validCartProduct(request.resource.data.productId, request.resource.data.quantity)
+          );
       }
 
       match /orders/{orderId} {
