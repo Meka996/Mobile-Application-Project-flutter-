@@ -17,7 +17,17 @@ class OrderItem {
     required this.unitPrice,
   });
 
+  int get lineTotalCents => (unitPrice * 100).round() * quantity;
+
   double get lineTotal => unitPrice * quantity;
+
+  bool matches(OrderItem other) =>
+      productId == other.productId &&
+      name == other.name &&
+      size == other.size &&
+      color == other.color &&
+      quantity == other.quantity &&
+      unitPrice == other.unitPrice;
 
   factory OrderItem.fromMap(Map<String, dynamic> map) {
     return OrderItem(
@@ -31,11 +41,11 @@ class OrderItem {
   }
 
   Map<String, dynamic> toMap() => {
-        'productId': productId,
-        'name': name,
-        'size': size,
-        'color': color,
-        'quantity': quantity,
-        'unitPrice': unitPrice,
-      };
+    'productId': productId,
+    'name': name,
+    'size': size,
+    'color': color,
+    'quantity': quantity,
+    'unitPrice': unitPrice,
+  };
 }

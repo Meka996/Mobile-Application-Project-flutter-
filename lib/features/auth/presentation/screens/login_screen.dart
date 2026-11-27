@@ -1,50 +1,41 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../data/auth_service.dart';
-import '../../../../core/widgets/velora_text_field.dart';
-import '../../../../core/widgets/velora_button.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_layout.dart';
+import '../../../../shared/shared.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.authService, this.onSignUp});
+
+  final AuthService? authService;
+  final VoidCallback? onSignUp;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final AuthService _authService = AuthService();
+  late final AuthService _authService = widget.authService ?? AuthService();
+  final _formKey = GlobalKey<FormState>();
 
   String _email = '';
   String _password = '';
   bool _isLoading = false;
 
   Future<void> _login() async {
-    if (_email.trim().isEmpty || _password.isEmpty) {
-      _showMessage('Please enter your email and password.');
-      return;
-    }
+    if (_isLoading || !_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _authService.login(
-        email: _email,
-        password: _password,
-      );
-
-      if (!mounted) return;
-
-      _showMessage('Login successful!');
+      await _authService.login(email: _email, password: _password);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
 
-      if (e.code == 'user-not-found' ||
-          e.code == 'invalid-credential') {
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
         _showMessage('No account found. Check your email and password.');
       } else if (e.code == 'wrong-password') {
         _showMessage('Incorrect password.');
@@ -66,68 +57,75 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.offWhite,
-      appBar: AppBar(
-        title: const Text('Login'),
-        backgroundColor: AppTheme.offWhite,
-        foregroundColor: AppTheme.deepRose,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          const SizedBox(height: 40),
+      appBar: AppBar(title: const Text('Login')),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppLayout.formMaxWidth),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(AppLayout.page),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              children: [
+                const SizedBox(height: AppLayout.section),
+                const VeloraLogo(greeting: 'Welcome Back to'),
 
-          const Text(
-            'Welcome Back to VELORA',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.deepRose,
+                const SizedBox(height: AppLayout.small),
+
+                const Text(
+                  'Login to continue shopping.',
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: AppLayout.section),
+
+                VeloraTextField(
+                  hint: 'Email Address',
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  validator: (value) => (value ?? '').trim().contains('@')
+                      ? null
+                      : 'Enter a valid email address.',
+                  onChanged: (value) => _email = value,
+                ),
+
+                const SizedBox(height: AppLayout.large),
+
+                VeloraTextField(
+                  hint: 'Password',
+                  icon: Icons.lock_outline,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Enter your password.'
+                      : null,
+                  onChanged: (value) => _password = value,
+                ),
+
+                const SizedBox(height: AppLayout.page),
+
+                VeloraButton(
+                  text: _isLoading ? 'Logging in...' : 'Login',
+                  icon: Icons.login,
+                  onPressed: _isLoading ? null : _login,
+                ),
+                if (widget.onSignUp != null)
+                  TextButton(
+                    onPressed: _isLoading ? null : widget.onSignUp,
+                    child: const Text('Create an account'),
+                  ),
+              ],
             ),
           ),
-
-          const SizedBox(height: 10),
-
-          const Text(
-            'Login to continue shopping.',
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 40),
-
-          VeloraTextField(
-            hint: 'Email Address',
-            icon: Icons.email_outlined,
-            onChanged: (value) => _email = value,
-          ),
-
-          const SizedBox(height: 20),
-
-          VeloraTextField(
-            hint: 'Password',
-            icon: Icons.lock_outline,
-            obscureText: true,
-            onChanged: (value) => _password = value,
-          ),
-
-          const SizedBox(height: 30),
-
-          VeloraButton(
-            text: _isLoading ? 'Logging in...' : 'Login',
-            icon: Icons.login,
-            onPressed: _isLoading ? null : _login,
-          ),
-        ],
+        ),
       ),
     );
   }

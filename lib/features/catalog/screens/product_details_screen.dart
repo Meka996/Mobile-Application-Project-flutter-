@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/shared.dart';
 import '../models/product.dart';
 
 // Cart receives the product and the selected variant.
-typedef ProductCartCallback = void Function(
+typedef ProductCartCallback = FutureOr<void> Function(
   Product product,
   String? selectedSize,
   String? selectedColor,
@@ -16,12 +22,18 @@ class ProductDetailsScreen extends StatefulWidget {
   final Product product;
   final ProductCartCallback? onAddToCart;
   final ProductFavoriteCallback? onAddToWishlist;
+  final Widget? wishlistAction;
+  final VoidCallback? onCartPressed;
+  final String Function(Object error)? cartErrorMessage;
 
   const ProductDetailsScreen({
     super.key,
     required this.product,
     this.onAddToCart,
     this.onAddToWishlist,
+    this.wishlistAction,
+    this.onCartPressed,
+    this.cartErrorMessage,
   });
 
   @override
@@ -31,6 +43,7 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   String? _selectedSize;
   String? _selectedColor;
+  bool _addingToCart = false;
 
   bool get _hasRequiredOptions {
     final sizeSelected = widget.product.sizes.isEmpty || _selectedSize != null;
@@ -41,238 +54,197 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return sizeSelected && colorSelected;
   }
 
-  void _addToCart() {
+  Future<void> _addToCart() async {
     final callback = widget.onAddToCart;
 
-    if (callback == null || widget.product.stock <= 0 || !_hasRequiredOptions) {
+    if (_addingToCart ||
+        callback == null ||
+        widget.product.stock <= 0 ||
+        !_hasRequiredOptions) {
       return;
     }
 
-    callback(widget.product, _selectedSize, _selectedColor);
+    setState(() => _addingToCart = true);
+    try {
+      await callback(widget.product, _selectedSize, _selectedColor);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Added to your cart.')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.cartErrorMessage?.call(error) ??
+                'Could not add this item to your cart.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _addingToCart = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final isAvailable = product.stock > 0;
-    final hasImages = product.imageUrls.isNotEmpty;
+    final available = product.stock > 0;
+    final theme = Theme.of(context);
+    final text = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
       appBar: AppBar(
-        title: const Text(
-          'Product Details',
-          style: TextStyle(
-            color: Color(0xFFC45D75),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: const Color(0xFFFFF8F9),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFFC45D75)),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 350,
-              width: double.infinity,
-              child: hasImages
-                  ? PageView.builder(
-                      itemCount: product.imageUrls.length,
-                      itemBuilder: (context, index) {
-                        return Image.network(
-                          product.imageUrls[index],
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _imageFallback();
-                          },
-                        );
-                      },
-                    )
-                  : _imageFallback(),
+        title: const Text('Product Details'),
+        actions: [
+          if (widget.wishlistAction != null) widget.wishlistAction!,
+          if (widget.onCartPressed != null)
+            IconButton(
+              onPressed: widget.onCartPressed,
+              tooltip: 'Cart',
+              icon: const Icon(Icons.shopping_bag_outlined),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.category.toUpperCase(),
-                    style: const TextStyle(
-                      color: Color(0xFFC45D75),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    product.price.toStringAsFixed(2),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFC45D75),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    product.description,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-
-                  // Size selection
-                  const Text(
-                    'Available Sizes',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  if (product.sizes.isEmpty)
-                    const Text('No sizes available')
-                  else
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: product.sizes.map((size) {
-                        final selected = _selectedSize == size;
-
-                        return ChoiceChip(
-                          label: Text(size),
-                          selected: selected,
-                          selectedColor: const Color(0xFFE8A8B4),
-                          onSelected: (_) {
-                            setState(() {
-                              _selectedSize = size;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-
-                  const SizedBox(height: 22),
-
-                  // Color selection
-                  const Text(
-                    'Available Colors',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  if (product.colors.isEmpty)
-                    const Text('No colors available')
-                  else
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: product.colors.map((color) {
-                        final selected = _selectedColor == color;
-
-                        return ChoiceChip(
-                          label: Text(color),
-                          selected: selected,
-                          selectedColor: const Color(0xFFE8A8B4),
-                          onSelected: (_) {
-                            setState(() {
-                              _selectedColor = color;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-
-                  const SizedBox(height: 22),
-
-                  // Stock status
-                  Row(
-                    children: [
-                      const Text(
-                        'Availability: ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        isAvailable
-                            ? 'In Stock (${product.stock})'
-                            : 'Out of Stock',
-                        style: TextStyle(
-                          color: isAvailable ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.w600,
+        ],
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppLayout.detailMaxWidth),
+          child: ListView(
+            children: [
+              SizedBox(
+                height: 350,
+                child: product.imageUrls.isEmpty
+                    ? const ProductImage(url: null, radius: 0)
+                    : PageView.builder(
+                        itemCount: product.imageUrls.length,
+                        itemBuilder: (_, index) => ProductImage(
+                          url: product.imageUrls[index],
+                          semanticLabel: product.name,
+                          radius: 0,
                         ),
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Add to Cart
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppLayout.page),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.category.toUpperCase(),
+                      style: text.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: AppLayout.small),
+                    Text(product.name, style: text.headlineMedium),
+                    const SizedBox(height: AppLayout.small),
+                    Text(
+                      '\$${product.price.toStringAsFixed(2)}',
+                      style: AppTextStyles.price(context, prominent: true),
+                    ),
+                    const SizedBox(height: AppLayout.large),
+                    Text(product.description, style: text.bodyLarge),
+                    const SizedBox(height: AppLayout.page),
+                    _VariantOptions(
+                      heading: 'Available Sizes',
+                      emptyLabel: 'No sizes available',
+                      values: product.sizes,
+                      selected: _selectedSize,
+                      onSelect: (size) => setState(() => _selectedSize = size),
+                    ),
+                    const SizedBox(height: AppLayout.large),
+                    _VariantOptions(
+                      heading: 'Available Colors',
+                      emptyLabel: 'No colors available',
+                      values: product.colors,
+                      selected: _selectedColor,
+                      onSelect: (color) =>
+                          setState(() => _selectedColor = color),
+                    ),
+                    const SizedBox(height: AppLayout.large),
+                    Text(
+                      available
+                          ? 'In Stock (${product.stock})'
+                          : 'Out of Stock',
+                      style: text.labelLarge?.copyWith(
+                        color: available
+                            ? AppColors.success
+                            : theme.colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: AppLayout.page),
+                    VeloraButton(
+                      text: _addingToCart ? 'Adding to Cart...' : 'Add to Cart',
+                      icon: Icons.shopping_bag_outlined,
                       onPressed:
-                          isAvailable &&
+                          !_addingToCart &&
+                              available &&
                               _hasRequiredOptions &&
                               widget.onAddToCart != null
                           ? _addToCart
                           : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFC45D75),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('Add to Cart'),
                     ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Favorite / Wishlist
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: widget.onAddToWishlist == null
-                          ? null
-                          : () {
-                              widget.onAddToWishlist!(product);
-                            },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFC45D75),
-                        side: const BorderSide(color: Color(0xFFC45D75)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                    if (widget.onAddToWishlist != null &&
+                        widget.wishlistAction == null) ...[
+                      const SizedBox(height: AppLayout.small),
+                      VeloraButton(
+                        text: 'Add to Wishlist',
+                        icon: Icons.favorite_border,
+                        outlined: true,
+                        onPressed: () => widget.onAddToWishlist!(product),
                       ),
-                      child: const Text('Add to Wishlist'),
-                    ),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _imageFallback() {
-    return Container(
-      color: const Color(0xFFFADCE4),
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.image_not_supported_outlined,
-        size: 60,
-        color: Color(0xFFC45D75),
-      ),
+class _VariantOptions extends StatelessWidget {
+  const _VariantOptions({
+    required this.heading,
+    required this.emptyLabel,
+    required this.values,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final String heading;
+  final String emptyLabel;
+  final List<String> values;
+  final String? selected;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(heading, style: text.titleMedium),
+        const SizedBox(height: AppLayout.small),
+        if (values.isEmpty)
+          Text(emptyLabel, style: text.bodySmall)
+        else
+          Wrap(
+            spacing: AppLayout.small,
+            runSpacing: AppLayout.small,
+            children: [
+              for (final value in values)
+                ChoiceChip(
+                  label: Text(value),
+                  selected: selected == value,
+                  onSelected: (_) => onSelect(value),
+                ),
+            ],
+          ),
+      ],
     );
   }
 }

@@ -12,7 +12,8 @@ No Core files, rules or docs are changed.
 | `services/favorites_repository.dart` | Favorites: stream, toggle (transaction), remove |
 | `services/cart_repository.dart` | Cart: stream, `addToCart`, increment/decrement, remove |
 | `services/wishlist_cart_errors.dart` | Exceptions + `friendlyError()` |
-| `widgets/*` | `AuthGate`, `FavoriteButton`, `CartItemTile`, `ProductImage`, empty/error/loading views |
+| `widgets/*` | Wishlist and cart `AuthGate`, `FavoriteButton`, and `CartItemTile` |
+| `lib/shared/shared.dart` | Shared product images, loading and message states, buttons, and totals |
 | `screens/wishlist_screen.dart`, `screens/cart_screen.dart` | The two screens |
 | `wishlist_cart.dart` | Single import for other members |
 | `test/features/wishlist_cart/cart_logic_test.dart` | Unit tests for IDs, money, totals |
@@ -56,6 +57,8 @@ await CartRepository().addToCart(productId: id, size: 'M', color: 'Pink');
 The Checkout button is hidden when `onCheckout` is null (no dead buttons).
 
 ## Manual QA
+Use the local Firebase Emulator Suite for these write and persistence checks.
+
 1. Signed out -> both screens show the sign-in message, nothing is written.
 2. Sign in, heart a product -> `favorites/{productId}` appears in the Console; Wishlist shows it.
 3. Un-heart from Wishlist -> doc deleted, heart updates elsewhere.

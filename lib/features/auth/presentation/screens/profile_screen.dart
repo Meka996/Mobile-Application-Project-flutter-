@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../data/auth_service.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/velora_button.dart';
+import '../../../../core/theme/app_layout.dart';
+import '../../../../shared/shared.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.onOrdersPressed});
+
+  final VoidCallback? onOrdersPressed;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -14,6 +16,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
 
@@ -21,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _profileExists = false;
   String? _errorMessage;
 
   @override
@@ -54,19 +58,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (!mounted) return;
 
-      if (!document.exists || document.data() == null) {
-        setState(() {
-          _errorMessage = 'Profile not found. Please contact support.';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      final data = document.data()!;
+      final data = document.data();
 
       setState(() {
-        _nameController.text = data['name']?.toString() ?? '';
-        _phoneController.text = data['phone']?.toString() ?? '';
+        _profileExists = document.exists;
+        _nameController.text = data?['name']?.toString() ?? '';
+        _phoneController.text = data?['phone']?.toString() ?? '';
         _isLoading = false;
       });
     } catch (e) {
@@ -80,6 +77,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
+    if (_isSaving || !_formKey.currentState!.validate()) return;
+
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
@@ -90,26 +89,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
 
-    if (name.isEmpty) {
-      _showMessage('Name cannot be empty.');
-      return;
-    }
-
-    if (name.length > 80) {
-      _showMessage('Name must be 80 characters or less.');
-      return;
-    }
-
     setState(() {
       _isSaving = true;
     });
 
     try {
-      await _authService.updateUserProfile(
-        uid: user.uid,
-        name: name,
-        phone: phone,
-      );
+      if (_profileExists) {
+        await _authService.updateUserProfile(
+          uid: user.uid,
+          name: name,
+          phone: phone,
+        );
+      } else {
+        await _authService.completeProfile(
+          uid: user.uid,
+          name: name,
+          phone: phone,
+        );
+        await _loadProfile();
+      }
 
       if (!mounted) return;
 
@@ -151,16 +149,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final theme = Theme.of(context);
+    final error = _errorMessage;
 
     return Scaffold(
-      backgroundColor: AppTheme.offWhite,
-
       appBar: AppBar(
         title: const Text('My Profile'),
-        backgroundColor: AppTheme.offWhite,
-        foregroundColor: AppTheme.deepRose,
-        elevation: 0,
         actions: [
+          if (widget.onOrdersPressed != null)
+            TextButton(
+              onPressed: widget.onOrdersPressed,
+              child: const Text('My Orders'),
+            ),
           IconButton(
             onPressed: _logout,
             icon: const Icon(Icons.logout),
@@ -168,109 +168,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 55,
-                      color: AppTheme.deepRose,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadProfile,
-                      child: const Text('Retry'),
-                    ),
-                  ],
+          ? const LoadingWidget(label: 'Loading profile')
+          : error != null
+          ? StateMessage.error(
+              title: 'Profile unavailable',
+              message: error,
+              onRetry: _loadProfile,
+            )
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppLayout.formMaxWidth,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.all(AppLayout.page),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    children: [
+                      const Icon(Icons.account_circle_outlined, size: 80),
+                      const SizedBox(height: AppLayout.large),
+                      Text(
+                        'My Account',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                      if (!_profileExists) ...[
+                        const SizedBox(height: AppLayout.small),
+                        const Text(
+                          'Enter your name to finish setting up your profile.',
+                        ),
+                      ],
+                      const SizedBox(height: AppLayout.page),
+                      Text('Email Address', style: theme.textTheme.labelLarge),
+                      const SizedBox(height: AppLayout.small),
+                      SelectableText(
+                        user?.email ?? 'No email available',
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: AppLayout.page),
+                      VeloraTextField(
+                        controller: _nameController,
+                        hint: 'Full Name',
+                        icon: Icons.person_outline,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          final name = (value ?? '').trim();
+                          if (name.isEmpty) return 'Enter your name.';
+                          if (name.length > 80) {
+                            return 'Use 80 characters or less.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppLayout.large),
+                      VeloraTextField(
+                        controller: _phoneController,
+                        hint: 'Phone Number',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.done,
+                      ),
+                      const SizedBox(height: AppLayout.page),
+                      VeloraButton(
+                        text: _isSaving
+                            ? 'Saving...'
+                            : _profileExists
+                            ? 'Save Changes'
+                            : 'Save Profile',
+                        icon: Icons.save_outlined,
+                        onPressed: _isSaving ? null : _updateProfile,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                const Icon(
-                  Icons.account_circle,
-                  size: 100,
-                  color: AppTheme.deepRose,
-                ),
-
-                const SizedBox(height: 15),
-
-                const Text(
-                  'My Account',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.deepRose,
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                const Text(
-                  'Email Address',
-                  style: TextStyle(
-                    color: AppTheme.deepRose,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  user?.email ?? 'No email available',
-                  style: const TextStyle(fontSize: 16),
-                ),
-
-                const SizedBox(height: 25),
-
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Full Name',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    hintText: 'Phone Number',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 25),
-
-                VeloraButton(
-                  text: _isSaving ? 'Saving...' : 'Save Changes',
-                  icon: Icons.save_outlined,
-                  onPressed: _isSaving ? null : _updateProfile,
-                ),
-
-                const SizedBox(height: 16),
-
-                VeloraButton(
-                  text: 'Logout',
-                  icon: Icons.logout,
-                  onPressed: _logout,
-                ),
-              ],
             ),
     );
   }

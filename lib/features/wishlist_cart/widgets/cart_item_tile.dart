@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:velora/core/theme/app_theme.dart';
+import 'package:velora/core/theme/app_layout.dart';
+import 'package:velora/core/theme/app_text_styles.dart';
+import 'package:velora/shared/shared.dart';
 
 import '../models/cart_line.dart';
-import 'product_image.dart';
 
 /// One row of the cart: photo, name, variant, quantity controls, subtotal.
 class CartItemTile extends StatelessWidget {
@@ -27,28 +28,27 @@ class CartItemTile extends StatelessWidget {
     final entry = line.entry;
     final problem = line.problem;
 
+    final theme = Theme.of(context);
+    final text = theme.textTheme;
+
     return Card(
-      color: Colors.white,
-      elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.babyPink),
-      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppLayout.medium),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
+            InkWell(
               onTap: onTap,
+              borderRadius: BorderRadius.circular(AppLayout.radius),
               child: ProductImage(
                 url: product?.imageUrl,
-                width: 80,
-                height: 100,
+                width: 72,
+                height: 96,
+                semanticLabel: product?.name,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppLayout.medium),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,38 +60,36 @@ class CartItemTile extends StatelessWidget {
                           product?.name ?? 'Unavailable product',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                          style: text.titleMedium,
                         ),
                       ),
                       IconButton(
                         tooltip: 'Remove item',
-                        visualDensity: VisualDensity.compact,
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: onRemove,
                       ),
                     ],
                   ),
                   Text(
-                    'Color: ${entry.color}  |  Size: ${entry.size}',
-                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                    'Color: ${entry.color}  ·  Size: ${entry.size}',
+                    style: text.bodySmall,
                   ),
                   if (problem != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         problem,
-                        style: TextStyle(
-                          color: Colors.red.shade700,
-                          fontSize: 12,
+                        style: text.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
                         ),
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  const SizedBox(height: AppLayout.small),
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: AppLayout.medium,
+                    runSpacing: AppLayout.small,
                     children: [
                       _QuantityControl(
                         quantity: entry.quantity,
@@ -100,25 +98,18 @@ class CartItemTile extends StatelessWidget {
                         onDecrement: onDecrement,
                       ),
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (line.isPurchasable)
                             Text(
                               '${formatCents(line.unitPriceCents)} each',
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontSize: 12,
-                              ),
+                              style: text.bodySmall,
                             ),
                           Text(
                             line.isPurchasable
                                 ? formatCents(line.subtotalCents)
-                                : '--',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: AppTheme.deepRose,
-                            ),
+                                : '—',
+                            style: AppTextStyles.price(context),
                           ),
                         ],
                       ),
@@ -149,17 +140,18 @@ class _QuantityControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.babyPink,
-        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(AppLayout.radius),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           IconButton(
             tooltip: quantity <= 1 ? 'Remove item' : 'Decrease quantity',
-            visualDensity: VisualDensity.compact,
             // At quantity 1 the minus becomes a trash can, because pressing
             // it deletes the cart document (quantity can never be 0).
             icon: Icon(
@@ -168,13 +160,9 @@ class _QuantityControl extends StatelessWidget {
             ),
             onPressed: onDecrement,
           ),
-          Text(
-            '$quantity',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text('$quantity', style: theme.textTheme.labelLarge),
           IconButton(
             tooltip: 'Increase quantity',
-            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.add, size: 18),
             onPressed: canIncrease ? onIncrement : null,
           ),

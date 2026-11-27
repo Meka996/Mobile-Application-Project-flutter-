@@ -29,14 +29,15 @@ Quantities and Total Calculation.
 E — Malak
 Checkout, Place Orders and Order History.
 
-## 2. Core Files
+## 2. Application Structure
 
-lib/main.dart
-lib/firebase_options.dart
-lib/core/theme/app_theme.dart
-lib/core/navigation/main_navigation.dart
-lib/core/widgets/velora_button.dart
-lib/core/widgets/velora_text_field.dart
+- `lib/main.dart` starts the app.
+- `lib/app/bootstrap.dart` initializes Firebase using `lib/firebase_options.dart`.
+- `lib/app/app.dart` sets up the app theme and authentication entry point.
+- `lib/core/theme/` defines the palette, typography, and spacing.
+- `lib/core/navigation/main_navigation.dart` connects the feature screens.
+- `lib/shared/shared.dart` exports reusable widgets from `lib/shared/widgets/`.
+- `lib/features/` holds the screens, data, and logic for each feature.
 
 Owner: Mohamed Hassan
 
@@ -71,7 +72,8 @@ Brand: VELORA
 Primary: #E8A8B4
 Secondary: #FADCE4
 Background: #FFF8F9
-Buttons: #C45D75
+Deep Rose accent: #C45D75
+Primary buttons and action text: #A5415A for contrast
 
 All screens must use AppTheme.lightTheme.
 

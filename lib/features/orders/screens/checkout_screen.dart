@@ -1,27 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../shared/shared.dart';
 import '../services/cart_reader.dart';
 import '../services/order_repository.dart';
-import '../models/order_item.dart';
 import '../widgets/order_item_tile.dart';
 import 'order_confirmation_screen.dart';
 
-/// CheckoutScreen — Phase 02 + 03 of the build plan.
-///
-/// What it does:
-///   1. Loads the signed-in user's real Firestore cart via [CartReader].
-///   2. Cross-references current product prices (re-read, not cached totals).
-///   3. Shows item list, subtotal/shipping/tax summary, warnings for
-///      unavailable items, and a Place Order button.
-///   4. On tap: creates the order + clears the cart atomically via
-///      [OrderRepository.placeOrder]; button is disabled during submission.
-///   5. Navigates to [OrderConfirmationScreen] only after Firestore write
-///      succeeds; never shows success from a failed write.
-///
-/// State pattern: StatefulWidget — no external state manager needed.
-/// The screen self-manages loading, cart data, error messages and submission.
+/// Reviews the user's Firestore cart and confirms the order after it is saved.
 class CheckoutScreen extends StatefulWidget {
-  /// Called by Mohamed Hassan's router — no arguments needed.
-  const CheckoutScreen({super.key});
+  const CheckoutScreen({super.key, this.onShopPressed});
+
+  final VoidCallback? onShopPressed;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -40,13 +32,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _submitting = false;
   String? _submitError;
 
-  static const double _shippingThreshold = 150.0;
-  static const double _taxRate = 0.08;
+  final _currency = NumberFormat.simpleCurrency(name: 'USD');
 
-  double get _shipping =>
-      (_cart?.total ?? 0) >= _shippingThreshold ? 0.0 : 9.99;
-  double get _tax => (_cart?.total ?? 0) * _taxRate;
-  double get _grandTotal => (_cart?.total ?? 0) + _shipping + _tax;
+  String _formatCents(int cents) => _currency.format(cents / 100);
 
   @override
   void initState() {
@@ -67,10 +55,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           _loadingCart = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
-          _loadError = e.toString();
+          _loadError = 'Check your connection and try again.';
           _loadingCart = false;
         });
       }
@@ -79,7 +67,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _placeOrder() async {
     final cart = _cart;
-    if (cart == null || cart.isEmpty) return;
+    if (_submitting || cart == null || !cart.canPlaceOrder) return;
 
     setState(() {
       _submitting = true;
@@ -87,25 +75,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final orderId = await _orderRepo.placeOrder(
-        items: cart.items,
-        total: _grandTotal,
-        cartItemIds: cart.cartItemIds,
-      );
+      final orderId = await _orderRepo.placeOrder(cart);
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => OrderConfirmationScreen(orderId: orderId),
+            builder: (_) => OrderConfirmationScreen(
+              orderId: orderId,
+              onShopPressed: widget.onShopPressed,
+            ),
           ),
         );
       }
-    } catch (e) {
+    } on CartChangedException {
+      if (!mounted) return;
+      await _loadCart();
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _submitError =
+            'Your cart or product prices changed. Review the updated order.';
+      });
+    } catch (_) {
       if (mounted) {
         setState(() {
           _submitting = false;
-          _submitError =
-              'Order could not be placed. Your cart is unchanged. Please try again.\n$e';
+          _submitError = 'Could not confirm your order. Check My Orders before trying again.';
         });
       }
     }
@@ -113,129 +108,110 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF8F9),
-        elevation: 0,
-        leading: const BackButton(color: Color(0xFF2C2C2C)),
-        title: const Text(
-          'Checkout',
-          style: TextStyle(
-            color: Color(0xFF2C2C2C),
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+    final error = _loadError;
+
+    return PopScope(
+      canPop: !_submitting,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: !_submitting,
+          title: const Text('Checkout'),
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppLayout.detailMaxWidth,
+            ),
+            child: _loadingCart
+                ? const LoadingWidget(label: 'Loading checkout')
+                : error != null
+                ? StateMessage.error(
+                    title: 'Could not load your cart',
+                    message: error,
+                    onRetry: _loadCart,
+                  )
+                : _buildBody(),
           ),
         ),
-        centerTitle: true,
       ),
-      body: _loadingCart
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFC45D75)))
-          : _loadError != null
-              ? _ErrorState(message: _loadError!, onRetry: _loadCart)
-              : _buildBody(),
     );
   }
 
   Widget _buildBody() {
     final cart = _cart!;
-    final isEmpty = cart.isEmpty;
+    final items = cart.items;
+    final text = Theme.of(context).textTheme;
 
     return Column(
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppLayout.large),
             children: [
-              // ── Warnings for skipped items
               if (cart.issues.isNotEmpty) ...[
-                _IssuesBanner(issues: cart.issues),
-                const SizedBox(height: 12),
-              ],
-
-              // ── Empty state
-              if (isEmpty) ...[
-                const SizedBox(height: 48),
-                const Icon(Icons.shopping_bag_outlined,
-                    size: 64, color: Color(0xFFE8A8B4)),
-                const SizedBox(height: 16),
-                const Center(
-                  child: Text(
-                    'Your cart is empty.\nAdd items before checking out.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF7A7A7A), fontSize: 15),
-                  ),
+                _CheckoutNotice(
+                  title: 'Some items could not be loaded',
+                  messages: cart.issues,
+                  warning: true,
                 ),
-              ] else ...[
-                Text('Your Order (${cart.items.length} item${cart.items.length == 1 ? '' : 's'})',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                ...cart.items.map((item) => OrderItemTile(item: item)),
-                const Divider(height: 32),
-                _SummaryRow('Subtotal',
-                    '\$${cart.total.toStringAsFixed(2)}'),
-                _SummaryRow(
-                    'Shipping',
-                    _shipping == 0
-                        ? 'Free'
-                        : '\$${_shipping.toStringAsFixed(2)}'),
-                _SummaryRow('Est. Tax (8%)',
-                    '\$${_tax.toStringAsFixed(2)}'),
-                const Divider(height: 24),
-                _SummaryRow(
+                const SizedBox(height: AppLayout.medium),
+              ],
+              if (cart.isEmpty)
+                const StateMessage(
+                  icon: Icons.shopping_bag_outlined,
+                  title: 'Your cart is empty.',
+                  message: 'Add items before checking out.',
+                )
+              else ...[
+                Text('Your Order', style: text.titleLarge),
+                const SizedBox(height: AppLayout.small),
+                for (final item in items) OrderItemTile(item: item),
+                const Divider(height: AppLayout.section),
+                SummaryRow('Subtotal', _formatCents(cart.subtotalCents)),
+                SummaryRow(
+                  'Shipping',
+                  cart.shippingCents == 0
+                      ? 'Free'
+                      : _formatCents(cart.shippingCents),
+                ),
+                SummaryRow('Est. Tax (8%)', _formatCents(cart.taxCents)),
+                const Divider(height: AppLayout.page),
+                SummaryRow(
                   'Total',
-                  '\$${_grandTotal.toStringAsFixed(2)}',
-                  bold: true,
+                  _formatCents(cart.totalCents),
+                  emphasized: true,
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  '⚠ Totals are client-calculated and not payment-grade. No real charge is processed.',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF999999)),
+                const SizedBox(height: AppLayout.small),
+                Text(
+                  'This is a demo checkout. No payment is collected.',
+                  style: text.bodySmall,
                 ),
               ],
-
-              // ── Submission error
-              if (_submitError != null) ...[
-                const SizedBox(height: 16),
-                _ErrorBanner(message: _submitError!),
+              if (cart.blockingIssue case final issue?) ...[
+                const SizedBox(height: AppLayout.large),
+                _CheckoutNotice(messages: [issue]),
+              ],
+              if (_submitError case final error?) ...[
+                const SizedBox(height: AppLayout.large),
+                _CheckoutNotice(messages: [error]),
               ],
             ],
           ),
         ),
-
-        // ── Place Order button — pinned at bottom
         SafeArea(
+          top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: (isEmpty || _submitting) ? null : _placeOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC45D75),
-                  disabledBackgroundColor: const Color(0xFFE8A8B4),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : Text(
-                        isEmpty ? 'Add Items to Order' : 'Place Order',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16),
-                      ),
-              ),
+            padding: const EdgeInsets.fromLTRB(
+              AppLayout.large,
+              AppLayout.small,
+              AppLayout.large,
+              AppLayout.large,
+            ),
+            child: VeloraButton(
+              text: _submitting ? 'Placing Order...' : 'Place Order',
+              onPressed: cart.canPlaceOrder && !_submitting
+                  ? _placeOrder
+                  : null,
             ),
           ),
         ),
@@ -244,108 +220,46 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
-// ─────────────── Helper widgets ───────────────
+class _CheckoutNotice extends StatelessWidget {
+  const _CheckoutNotice({
+    this.title,
+    required this.messages,
+    this.warning = false,
+  });
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow(this.label, this.value, {this.bold = false});
-  final String label;
-  final String value;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = bold
-        ? const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)
-        : const TextStyle(fontSize: 14, color: Color(0xFF555555));
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: style),
-          Text(value, style: style),
-        ],
-      ),
-    );
-  }
-}
-
-class _IssuesBanner extends StatelessWidget {
-  const _IssuesBanner({required this.issues});
-  final List<String> issues;
+  final String? title;
+  final List<String> messages;
+  final bool warning;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFFCE6E)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Some items could not be loaded:',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          const SizedBox(height: 4),
-          ...issues.map((e) => Text('• $e',
-              style:
-                  const TextStyle(fontSize: 12, color: Color(0xFF7A5A00)))),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message});
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFEDED),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE57373)),
-      ),
-      child: Text(message,
-          style: const TextStyle(fontSize: 12, color: Color(0xFFB71C1C))),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final heading = title;
+    final foreground = warning ? AppColors.warning : scheme.onErrorContainer;
+    return Semantics(
+      liveRegion: !warning,
+      child: Container(
+        padding: const EdgeInsets.all(AppLayout.medium),
+        decoration: BoxDecoration(
+          color: warning ? AppColors.warningSurface : scheme.errorContainer,
+          borderRadius: BorderRadius.circular(AppLayout.radius),
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Color(0xFFC45D75)),
-            const SizedBox(height: 16),
-            Text('Could not load your cart',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF999999), fontSize: 12)),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC45D75)),
-            ),
+            if (heading != null) ...[
+              Text(
+                heading,
+                style: text.titleSmall?.copyWith(color: foreground),
+              ),
+              const SizedBox(height: AppLayout.small),
+            ],
+            for (final message in messages)
+              Text(
+                message,
+                style: text.bodyMedium?.copyWith(color: foreground),
+              ),
           ],
         ),
       ),

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:velora/core/theme/app_theme.dart';
-import 'package:velora/core/widgets/velora_button.dart';
+import 'package:velora/core/theme/app_layout.dart';
+import 'package:velora/shared/shared.dart';
 
 import '../models/cart_line.dart';
 import '../services/cart_repository.dart';
 import '../services/wishlist_cart_errors.dart';
 import '../widgets/auth_gate.dart';
 import '../widgets/cart_item_tile.dart';
-import '../widgets/state_views.dart';
 
 /// The shopping cart: live lines, quantity controls, subtotals and total.
 ///
@@ -56,7 +55,10 @@ class CartScreen extends StatelessWidget {
     );
 
     if (!showAppBar) return body;
-    return Scaffold(appBar: AppBar(title: const Text('Your Cart')), body: body);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Your Cart')),
+      body: body,
+    );
   }
 }
 
@@ -86,9 +88,8 @@ class _CartContentState extends State<_CartContent> {
       await action();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(error))),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(friendlyError(error))));
     }
   }
 
@@ -98,16 +99,15 @@ class _CartContentState extends State<_CartContent> {
       stream: _stream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return StateMessage(
+          return StateMessage.error(
             icon: Icons.cloud_off_outlined,
             title: 'Could not load your cart',
             message: friendlyError(snapshot.error!),
-            actionLabel: 'Try again',
-            onAction: () =>
+            onRetry: () =>
                 setState(() => _stream = widget.repository.watchCart()),
           );
         }
-        if (!snapshot.hasData) return const LoadingView();
+        if (!snapshot.hasData) return const LoadingWidget();
 
         final cart = snapshot.data!;
         if (cart.isEmpty) {
@@ -120,37 +120,56 @@ class _CartContentState extends State<_CartContent> {
           );
         }
 
-        return Column(
-          children: [
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: cart.lines.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final line = cart.lines[index];
-                  final id = line.entry.id;
-                  final open = widget.onOpenProduct;
-                  return CartItemTile(
-                    key: ValueKey(id),
-                    line: line,
-                    onTap: open == null || line.product == null
-                        ? null
-                        : () => open(line.entry.productId),
-                    onIncrement: () => _run(
-                      () => widget.repository.increment(
-                        id,
-                        maxQuantity: line.product?.stock,
-                      ),
-                    ),
-                    onDecrement: () => _run(() => widget.repository.decrement(id)),
-                    onRemove: () => _run(() => widget.repository.removeItem(id)),
-                  );
-                },
-              ),
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppLayout.detailMaxWidth,
             ),
-            _SummaryPanel(cart: cart, onCheckout: widget.onCheckout),
-          ],
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(AppLayout.large),
+                  sliver: SliverList.separated(
+                    itemCount: cart.lines.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppLayout.medium),
+                    itemBuilder: (context, index) {
+                      final line = cart.lines[index];
+                      final id = line.entry.id;
+                      final open = widget.onOpenProduct;
+                      return CartItemTile(
+                        key: ValueKey(id),
+                        line: line,
+                        onTap: open == null || line.product == null
+                            ? null
+                            : () => open(line.entry.productId),
+                        onIncrement: () => _run(
+                          () => widget.repository.increment(
+                            id,
+                            maxQuantity: line.product?.stock,
+                          ),
+                        ),
+                        onDecrement: () =>
+                            _run(() => widget.repository.decrement(id)),
+                        onRemove: () =>
+                            _run(() => widget.repository.removeItem(id)),
+                      );
+                    },
+                  ),
+                ),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _SummaryPanel(
+                      cart: cart,
+                      onCheckout: widget.onCheckout,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -168,33 +187,35 @@ class _SummaryPanel extends StatelessWidget {
     final checkout = onCheckout;
     final total = formatCents(cart.totalCents);
 
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.babyPink)),
+      padding: const EdgeInsets.all(AppLayout.large),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: SafeArea(
         top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SummaryRow(label: 'Items', value: '${cart.itemCount}'),
-            const SizedBox(height: 6),
-            _SummaryRow(label: 'Subtotal', value: total),
-            const Divider(height: 20),
-            _SummaryRow(label: 'Total', value: total, bold: true),
+            SummaryRow('Items', '${cart.itemCount}'),
+            const Divider(height: AppLayout.page),
+            SummaryRow('Cart total', total, emphasized: true),
             if (cart.hasProblems)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: AppLayout.small),
                 child: Text(
-                  'Unavailable items are not included in the total. '
-                  'Fix or remove them to continue.',
-                  style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                  'Unavailable items are excluded from the total. Review affected items before checkout.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.error,
+                  ),
                 ),
               ),
             if (checkout != null) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: AppLayout.medium),
               VeloraButton(
                 text: 'Checkout',
                 icon: Icons.lock_outline,
@@ -204,31 +225,6 @@ class _SummaryPanel extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-    this.bold = false,
-  });
-
-  final String label;
-  final String value;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontSize: bold ? 18 : 14,
-      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-      color: bold ? AppTheme.deepRose : Colors.black87,
-    );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [Text(label, style: style), Text(value, style: style)],
     );
   }
 }

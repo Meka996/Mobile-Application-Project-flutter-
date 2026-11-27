@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../models/order_item.dart';
 
 /// Displays a single line item — used in both CheckoutScreen and
@@ -12,50 +15,50 @@ class OrderItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppLayout.small),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (showImage) ...[
             ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppLayout.radius),
               child: Container(
                 width: 72,
                 height: 88,
-                color: const Color(0xFFFADCE4),
-                child: const Icon(Icons.checkroom,
-                    color: Color(0xFFC45D75), size: 32),
+                color: scheme.secondaryContainer,
+                child: Icon(
+                  Icons.checkroom,
+                  color: scheme.onSecondaryContainer,
+                  size: 32,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppLayout.medium),
           ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                Text(item.name, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 2),
                 Text(
                   'Size: ${item.size}  ·  Color: ${item.color}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: Colors.grey[600]),
+                  style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Qty: ${item.quantity}  ·  \$${item.unitPrice.toStringAsFixed(2)} each',
                   style: theme.textTheme.bodySmall,
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  '\$${item.lineTotal.toStringAsFixed(2)}',
+                  style: AppTextStyles.price(context),
+                ),
               ],
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '\$${item.lineTotal.toStringAsFixed(2)}',
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700, color: const Color(0xFFC45D75)),
           ),
         ],
       ),

@@ -1,7 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/order_item.dart';
+
 import '../models/order_model.dart';
+import 'cart_reader.dart';
+
+class CartChangedException implements Exception {
+  const CartChangedException();
+}
 
 /// Handles all Firestore reads and writes for the orders feature.
 ///
@@ -13,11 +18,9 @@ import '../models/order_model.dart';
 /// LIMITATION: totals are client-calculated and are NOT payment-grade.
 /// No stock is decremented (product writes are denied by rules).
 class OrderRepository {
-  OrderRepository({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+  OrderRepository({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -27,41 +30,54 @@ class OrderRepository {
   CollectionReference<Map<String, dynamic>> _ordersCol(String uid) =>
       _firestore.collection('users').doc(uid).collection('orders');
 
-  /// Creates an order and clears the cart atomically.
-  /// [cartItemIds] — the document IDs of the cart items to delete.
-  /// Throws [Exception] if the user is not signed in.
-  /// Throws [FirebaseException] if Firestore rejects the write.
-  Future<String> placeOrder({
-    required List<OrderItem> items,
-    required double total,
-    required List<String> cartItemIds,
-  }) async {
+  /// Rechecks reviewed lines and product prices, then writes the order and
+  /// removes those lines in the same transaction.
+  Future<String> placeOrder(CartSnapshot reviewedCart) async {
     final uid = _uid;
-    if (uid == null) throw Exception('User not signed in');
-    if (items.isEmpty) throw Exception('Cart is empty');
-    if (items.length > 20) throw Exception('Order exceeds 20 line items');
-
-    final batch = _firestore.batch();
-
-    // 1. New order document
-    final orderRef = _ordersCol(uid).doc();
-    batch.set(orderRef, {
-      'items': items.map((i) => i.toMap()).toList(),
-      'total': total,
-      'status': 'placed',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    // 2. Delete captured cart documents
-    final cartCol = _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('cart');
-    for (final id in cartItemIds) {
-      batch.delete(cartCol.doc(id));
+    if (uid == null || uid != reviewedCart.uid) {
+      throw StateError('Your sign-in session changed.');
+    }
+    if (!reviewedCart.canPlaceOrder) {
+      throw StateError('Your cart cannot be checked out.');
     }
 
-    await batch.commit();
+    final orderRef = _ordersCol(uid).doc();
+    final cartCol = _firestore.collection('users').doc(uid).collection('cart');
+    final cartRefs = reviewedCart.lines.keys.map(cartCol.doc).toList();
+    final productIds = reviewedCart.items.map((item) => item.productId).toSet();
+
+    final placed = await _firestore.runTransaction<bool>((transaction) async {
+      final cart = <String, Map<String, dynamic>>{};
+      for (final ref in cartRefs) {
+        final data = (await transaction.get(ref)).data();
+        if (data != null) cart[ref.id] = data;
+      }
+
+      final products = <String, Map<String, dynamic>>{};
+      for (final id in productIds) {
+        final ref = _firestore.collection('products').doc(id);
+        final data = (await transaction.get(ref)).data();
+        if (data != null) products[id] = data;
+      }
+
+      final latest = CartSnapshot.fromDocuments(uid, cart, products);
+      if (!latest.canPlaceOrder || !reviewedCart.matchesReviewedLines(latest)) {
+        return false;
+      }
+
+      transaction.set(orderRef, {
+        'items': latest.items.map((item) => item.toMap()).toList(),
+        'total': latest.totalCents / 100,
+        'status': 'placed',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      for (final ref in cartRefs) {
+        transaction.delete(ref);
+      }
+      return true;
+    });
+    // Keep the UI exception on the Dart side of the Firestore web bridge.
+    if (!placed) throw const CartChangedException();
     return orderRef.id;
   }
 

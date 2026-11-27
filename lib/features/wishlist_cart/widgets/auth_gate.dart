@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'state_views.dart';
+import 'package:velora/shared/shared.dart';
 
 /// Shows [signedInBuilder] for a signed-in user and a friendly "please sign
 /// in" screen for guests, so we never write to `users/null/...`.

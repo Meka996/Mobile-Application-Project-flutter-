@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:velora/core/theme/app_theme.dart';
 
 import '../services/favorites_repository.dart';
 import '../services/wishlist_cart_errors.dart';
@@ -34,7 +33,7 @@ class FavoriteButton extends StatelessWidget {
         if (user == null) {
           return IconButton(
             tooltip: 'Add to wishlist',
-            icon: const Icon(Icons.favorite_border, color: AppTheme.deepRose),
+            icon: const Icon(Icons.favorite_border),
             onPressed: () {
               final signIn = onSignInRequested;
               if (signIn != null) {
@@ -74,17 +73,17 @@ class _SignedInHeart extends StatefulWidget {
 }
 
 class _SignedInHeartState extends State<_SignedInHeart> {
-  late final Stream<bool> _isFavorite =
-      widget.repository.watchIsFavorite(widget.productId);
+  late final Stream<bool> _isFavorite = widget.repository.watchIsFavorite(
+    widget.productId,
+  );
 
   Future<void> _toggle() async {
     try {
       await widget.repository.toggleFavorite(widget.productId);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(error))),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(friendlyError(error))));
     }
   }
 
@@ -96,10 +95,7 @@ class _SignedInHeartState extends State<_SignedInHeart> {
         final isFavorite = snapshot.data ?? false;
         return IconButton(
           tooltip: isFavorite ? 'Remove from wishlist' : 'Add to wishlist',
-          icon: Icon(
-            isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: AppTheme.deepRose,
-          ),
+          icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
           onPressed: snapshot.hasData ? _toggle : null,
         );
       },
