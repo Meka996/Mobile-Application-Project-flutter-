@@ -116,8 +116,7 @@ class CartRepository {
     });
   }
 
-  Future<void> increment(String cartItemId, {int? maxQuantity}) =>
-      _changeQuantity(cartItemId, 1, maxQuantity: maxQuantity);
+  Future<void> increment(String cartItemId) => _changeQuantity(cartItemId, 1);
 
   /// Going below 1 deletes the document (rules reject quantity = 0).
   Future<void> decrement(String cartItemId) =>
@@ -128,37 +127,35 @@ class CartRepository {
     return _cart().doc(cartItemId).delete();
   }
 
-  Future<void> _changeQuantity(
-    String cartItemId,
-    int delta, {
-    int? maxQuantity,
-  }) {
+  Future<void> _changeQuantity(String cartItemId, int delta) {
     if (cartItemId.isEmpty) throw ArgumentError('Invalid cart item.');
     final ref = _cart().doc(cartItemId);
     return _db.runTransaction<void>((tx) async {
       final snap = await tx.get(ref);
       if (!snap.exists) return; // already removed elsewhere
       final data = snap.data();
-      final productId = data?['productId'];
-      if (productId is! String || productId.isEmpty) {
-        throw const ProductUnavailableException('This cart item is invalid. Remove it and try again.');
-      }
-      final productSnap = await tx.get(_db.collection('products').doc(productId));
-      final productData = productSnap.data();
-      if (!productSnap.exists || productData == null) {
-        throw const ProductUnavailableException('This product is no longer available.');
-      }
-      final product = ProductInfo.fromMap(productId, productData);
-      if (!product.isPurchasable) {
-        throw const ProductUnavailableException('This product is no longer available.');
-      }
       final next = _readQuantity(data) + delta;
       if (next <= 0) {
         tx.delete(ref);
         return;
       }
-      if (next > product.stock) {
-        throw ProductUnavailableException('Only ${product.stock} left in stock.');
+      if (delta > 0) {
+        final productId = data?['productId'];
+        if (productId is! String || productId.isEmpty) {
+          throw const ProductUnavailableException('This cart item is invalid.');
+        }
+        final productSnap = await tx.get(_db.collection('products').doc(productId));
+        final productData = productSnap.data();
+        if (!productSnap.exists || productData == null) {
+          throw const ProductUnavailableException('This product is no longer available.');
+        }
+        final product = ProductInfo.fromMap(productId, productData);
+        if (!product.isPurchasable) {
+          throw const ProductUnavailableException('This product is no longer available.');
+        }
+        if (next > product.stock) {
+          throw ProductUnavailableException('Only ${product.stock} left in stock.');
+        }
       }
       tx.update(ref, {
         'quantity': next,
