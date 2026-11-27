@@ -99,7 +99,7 @@ class CartSnapshot {
 
   /// Lines that can really be bought. Task E should use these for orders.
   List<CartLine> get purchasableLines =>
-      lines.where((line) => line.isPurchasable).toList();
+      lines.where((line) => line.isPurchasable && !line.exceedsStock).toList();
 
   int get totalCents =>
       lines.fold<int>(0, (sum, line) => sum + line.subtotalCents);
