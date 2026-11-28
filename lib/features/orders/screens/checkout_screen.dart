@@ -114,9 +114,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF8F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: const BackButton(color: Color(0xFF2C2C2C)),
         title: const Text(
@@ -232,7 +232,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     : Text(
                         isEmpty ? 'Add Items to Order' : (canCheckout ? 'Place Order' : 'Fix Cart Items'),
                         style: const TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.surface,
                             fontWeight: FontWeight.w700,
                             fontSize: 16),
                       ),
