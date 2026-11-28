@@ -194,7 +194,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Final price and stock are verified securely when you place the order. No payment is charged.',
+                  'Price and stock are checked again when you place the order. No payment is charged.',
                   style: TextStyle(fontSize: 11, color: Color(0xFF999999)),
                 ),
               ],

@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/order_item.dart';
 
 /// Resolves cart entries against current catalogue data for checkout display.
-/// This is only a preview; the trusted Order API revalidates everything
+/// This is only a preview; OrderRepository revalidates everything
 /// transactionally using current Firestore product and cart documents.
 class CartReader {
   CartReader({FirebaseFirestore? firestore, FirebaseAuth? auth})
