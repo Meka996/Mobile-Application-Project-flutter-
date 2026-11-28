@@ -19,9 +19,9 @@ class OrderDetailScreen extends StatelessWidget {
         : order.id.toUpperCase();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF8F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: const BackButton(color: Color(0xFF2C2C2C)),
         title: Text(
@@ -94,7 +94,7 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 1,
       child: Padding(
