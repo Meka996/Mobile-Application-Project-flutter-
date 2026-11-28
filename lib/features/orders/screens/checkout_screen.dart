@@ -231,7 +231,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             strokeWidth: 2, color: Colors.white))
                     : Text(
                         isEmpty ? 'Add Items to Order' : (canCheckout ? 'Place Order' : 'Fix Cart Items'),
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: Theme.of(context).colorScheme.surface,
                             fontWeight: FontWeight.w700,
                             fontSize: 16),
