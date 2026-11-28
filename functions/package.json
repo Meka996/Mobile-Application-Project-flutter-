@@ -5,8 +5,7 @@
   "main": "index.js",
   "engines": { "node": "22" },
   "scripts": {
-    "lint": "node --check index.js",
-    "seed:products": "node seed_products.js"
+    "lint": "node --check index.js"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",

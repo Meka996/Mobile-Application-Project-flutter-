@@ -23,6 +23,10 @@ Categories: Dresses, Jackets, Shoes, Bags, Tops, Pants
 Product images are bundled in the Flutter app under assets/images/products.
 Firestore stores their local asset paths; no external image URLs are used.
 
+Products are added manually in the Firebase Console. Use the exact field
+names and data types listed above. The imagePaths values must match the
+local asset paths bundled with the Flutter app.
+
 ## 2. Users
 
 Document: users/{uid}
@@ -76,4 +80,3 @@ Initial order status: placed.
 - Firestore client rules deny direct order creation, update and deletion. Admin SDK writes from the callable bypass client rules.
 - Deploy both callable and rules: firebase deploy --only functions:placeOrder,firestore:rules.
 - Demo checkout: free shipping at $150, otherwise $9.99, plus 8% tax. No payment gateway or real charge is implemented.
-- Demo product data is fictional. See docs/demo_data.md.
