@@ -93,7 +93,7 @@ service cloud.firestore {
 
       match /orders/{orderId} {
         allow read: if isOwner(userId);
-        // Only the trusted Admin-SDK callable function may create orders.
+        // Only the trusted server using the Admin SDK may create orders.
         allow create, update, delete: if false;
       }
     }

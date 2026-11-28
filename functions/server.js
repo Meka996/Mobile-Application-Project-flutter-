@@ -61,7 +61,7 @@ function validateVariant(product, size, color) {
 }
 async function requireFirebaseUser(req, res, next) {
   try {
-    const match = (req.get("authorization") || "").match(/^Bearer\\s+(.+)$/i);
+    const match = (req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
     if (!match) throw httpError(401, "Please sign in before placing an order.");
     req.firebaseUser = await getAuth().verifyIdToken(match[1], true);
     return next();
