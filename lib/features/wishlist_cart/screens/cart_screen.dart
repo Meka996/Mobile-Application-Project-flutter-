@@ -168,7 +168,7 @@ class _SummaryPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         border: Border(top: BorderSide(color: AppTheme.babyPink)),
       ),
       child: SafeArea(
