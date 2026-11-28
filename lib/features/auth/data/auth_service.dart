@@ -1,4 +1,3 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -19,10 +18,7 @@ class AuthService {
     );
 
     final user = credential.user;
-
-    if (user == null) {
-      throw Exception('User account was not created.');
-    }
+    if (user == null) throw Exception('User account was not created.');
 
     await _firestore.collection('users').doc(user.uid).set({
       'name': name.trim(),
@@ -67,5 +63,26 @@ class AuthService {
       'name': name.trim(),
       'phone': phone.trim(),
     });
+  }
+
+  // Change password after confirming the user's current password.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    final email = user?.email;
+
+    if (user == null || email == null) {
+      throw Exception('Please sign in again.');
+    }
+
+    final credential = EmailAuthProvider.credential(
+      email: email,
+      password: currentPassword,
+    );
+
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(newPassword);
   }
 }
