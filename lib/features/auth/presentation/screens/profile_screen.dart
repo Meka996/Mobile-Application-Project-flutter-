@@ -337,6 +337,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.deepRose),
                     ),
                     const SizedBox(height: 12),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: AppTheme.isDarkMode,
+                      builder: (context, isDark, child) => Card(
+                        color: Theme.of(context).cardColor,
+                        child: SwitchListTile(
+                          secondary: Icon(
+                            isDark ? Icons.dark_mode : Icons.light_mode,
+                            color: AppTheme.deepRose,
+                          ),
+                          title: const Text('Dark Mode'),
+                          subtitle: const Text('Change the app appearance'),
+                          value: isDark,
+                          activeColor: AppTheme.deepRose,
+                          onChanged: (value) => AppTheme.isDarkMode.value = value,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     _actionTile(
                       icon: Icons.receipt_long_outlined,
                       title: 'Order History',
