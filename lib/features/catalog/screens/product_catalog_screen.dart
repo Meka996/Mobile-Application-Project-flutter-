@@ -70,7 +70,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Shop',
@@ -79,7 +79,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFFFF8F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
       ),
@@ -98,7 +98,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 hintText: 'Search products...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFC45D75)),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Theme.of(context).colorScheme.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
