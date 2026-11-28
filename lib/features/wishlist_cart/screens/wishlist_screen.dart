@@ -155,7 +155,7 @@ class _WishlistCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppTheme.babyPink),
         ),
@@ -173,7 +173,7 @@ class _WishlistCard extends StatelessWidget {
                     top: 4,
                     right: 4,
                     child: Material(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       shape: const CircleBorder(),
                       child: IconButton(
                         tooltip: 'Remove from wishlist',
