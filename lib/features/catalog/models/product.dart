@@ -4,7 +4,7 @@ class Product {
   final String description;
   final double price;
   final String category;
-  final List<String> imageUrls;
+  final List<String> imagePaths;
   final List<String> sizes;
   final List<String> colors;
   final int stock;
@@ -16,7 +16,7 @@ class Product {
     required this.description,
     required this.price,
     required this.category,
-    required this.imageUrls,
+    required this.imagePaths,
     required this.sizes,
     required this.colors,
     required this.stock,
@@ -30,7 +30,7 @@ class Product {
       description: data['description'] as String? ?? '',
       price: (data['price'] as num?)?.toDouble() ?? 0.0,
       category: data['category'] as String? ?? '',
-      imageUrls: List<String>.from(data['imageUrls'] ?? []),
+      imagePaths: List<String>.from(data['imagePaths'] ?? []),
       sizes: List<String>.from(data['sizes'] ?? []),
       colors: List<String>.from(data['colors'] ?? []),
       stock: (data['stock'] as num?)?.toInt() ?? 0,

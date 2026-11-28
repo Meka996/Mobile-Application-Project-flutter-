@@ -43,7 +43,7 @@ class CartItemTile extends StatelessWidget {
             GestureDetector(
               onTap: onTap,
               child: ProductImage(
-                url: product?.imageUrl,
+                assetPath: product?.imagePath,
                 width: 80,
                 height: 100,
               ),

@@ -3,11 +3,10 @@
   "description": "Trusted backend functions for VELORA",
   "private": true,
   "main": "index.js",
-  "engines": {
-    "node": "22"
-  },
+  "engines": { "node": "22" },
   "scripts": {
-    "lint": "node --check index.js"
+    "lint": "node --check index.js",
+    "seed:products": "node seed_products.js"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",

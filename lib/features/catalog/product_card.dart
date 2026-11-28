@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'models/product.dart';
 
 class ProductCard extends StatelessWidget {
@@ -10,8 +9,7 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = product.imageUrls.isNotEmpty;
-
+    final hasImage = product.imagePaths.isNotEmpty;
     return Card(
       color: const Color(0xFFFFF8F9),
       elevation: 2,
@@ -27,27 +25,19 @@ class ProductCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (hasImage)
-                    Image.network(
-                      product.imageUrls.first,
+                    Image.asset(
+                      product.imagePaths.first,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _imageFallback();
-                      },
+                      errorBuilder: (context, error, stackTrace) => _imageFallback(),
                     )
                   else
                     _imageFallback(),
-
                   if (product.stock == 0)
                     Container(
                       color: Colors.black45,
                       alignment: Alignment.center,
-                      child: const Text(
-                        'OUT OF STOCK',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: const Text('OUT OF STOCK',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
@@ -57,40 +47,16 @@ class ProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.category,
-                    style: const TextStyle(
-                      color: Color(0xFFC45D75),
-                      fontSize: 12,
-                    ),
-                  ),
+                  Text(product.category, style: const TextStyle(color: Color(0xFFC45D75), fontSize: 12)),
                   const SizedBox(height: 4),
-                  Text(
-                    product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
+                  Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 5),
-                  Text(
-                    product.price.toStringAsFixed(2),
-                    style: const TextStyle(
-                      color: Color(0xFFC45D75),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                  Text(product.price.toStringAsFixed(2),
+                    style: const TextStyle(color: Color(0xFFC45D75), fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 4),
-                  Text(
-                    product.stock > 0 ? 'Available' : 'Unavailable',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: product.stock > 0 ? Colors.green : Colors.red,
-                    ),
-                  ),
+                  Text(product.stock > 0 ? 'Available' : 'Unavailable',
+                    style: TextStyle(fontSize: 12, color: product.stock > 0 ? Colors.green : Colors.red)),
                 ],
               ),
             ),
@@ -100,15 +66,9 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _imageFallback() {
-    return Container(
-      color: const Color(0xFFFADCE4),
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.image_not_supported_outlined,
-        size: 45,
-        color: Color(0xFFC45D75),
-      ),
-    );
-  }
+  Widget _imageFallback() => Container(
+    color: const Color(0xFFFADCE4),
+    alignment: Alignment.center,
+    child: const Icon(Icons.image_not_supported_outlined, size: 45, color: Color(0xFFC45D75)),
+  );
 }

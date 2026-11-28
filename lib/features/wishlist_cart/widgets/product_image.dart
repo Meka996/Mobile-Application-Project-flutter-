@@ -1,43 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:velora/core/theme/app_theme.dart';
 
-/// Rounded product photo with loading and error fallbacks.
+/// Displays a bundled product image. No network request is made.
 class ProductImage extends StatelessWidget {
-  const ProductImage({
-    super.key,
-    required this.url,
-    this.width,
-    this.height,
-  });
+  const ProductImage({super.key, required this.assetPath, this.width, this.height});
 
-  final String? url;
+  final String? assetPath;
   final double? width;
   final double? height;
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = url;
-
+    final path = assetPath;
     final placeholder = Container(
       width: width,
       height: height,
       color: AppTheme.babyPink,
       child: const Icon(Icons.image_outlined, color: AppTheme.deepRose),
     );
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
-      child: imageUrl == null || imageUrl.isEmpty
+      child: path == null || path.isEmpty
           ? placeholder
-          : Image.network(
-              imageUrl,
-              width: width,
-              height: height,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : placeholder,
-              errorBuilder: (context, error, stack) => placeholder,
-            ),
+          : Image.asset(path, width: width, height: height, fit: BoxFit.cover,
+              errorBuilder: (context, error, stack) => placeholder),
     );
   }
 }

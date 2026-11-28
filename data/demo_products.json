@@ -1,0 +1,403 @@
+[
+  {
+    "id": "demo_dress_001",
+    "name": "Rose Midi Dress",
+    "description": "A softly structured midi dress with a flattering waist and a flowing skirt. An easy choice for brunch, dinners, and special everyday moments.",
+    "price": 64.99,
+    "category": "Dresses",
+    "imagePaths": [
+      "assets/images/products/dresses/rose-midi-dress.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Dusty Rose",
+      "Ivory"
+    ],
+    "stock": 18,
+    "isActive": true
+  },
+  {
+    "id": "demo_dress_002",
+    "name": "Ivory Wrap Dress",
+    "description": "A timeless wrap silhouette with a gentle V neckline and adjustable waist tie. Made for effortless day-to-evening styling.",
+    "price": 72.5,
+    "category": "Dresses",
+    "imagePaths": [
+      "assets/images/products/dresses/ivory-wrap-dress.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L"
+    ],
+    "colors": [
+      "Ivory",
+      "Sage"
+    ],
+    "stock": 12,
+    "isActive": true
+  },
+  {
+    "id": "demo_dress_003",
+    "name": "Midnight Slip Dress",
+    "description": "A minimal slip dress with delicate straps and a smooth drape. Wear it alone for evenings or layer it with a tailored jacket.",
+    "price": 58,
+    "category": "Dresses",
+    "imagePaths": [
+      "assets/images/products/dresses/midnight-slip-dress.png"
+    ],
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Midnight",
+      "Champagne"
+    ],
+    "stock": 9,
+    "isActive": true
+  },
+  {
+    "id": "demo_jacket_001",
+    "name": "Rose Tailored Blazer",
+    "description": "A modern single-breasted blazer with softly defined shoulders and clean lapels. An easy layer that elevates a simple outfit.",
+    "price": 89,
+    "category": "Jackets",
+    "imagePaths": [
+      "assets/images/products/jackets/rose-tailored-blazer.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Dusty Rose",
+      "Black"
+    ],
+    "stock": 14,
+    "isActive": true
+  },
+  {
+    "id": "demo_jacket_002",
+    "name": "Cream Denim Jacket",
+    "description": "A relaxed denim-inspired jacket in warm cream, finished with a neat collar and front buttons. A year-round layering staple.",
+    "price": 76,
+    "category": "Jackets",
+    "imagePaths": [
+      "assets/images/products/jackets/cream-denim-jacket.png"
+    ],
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Cream",
+      "Light Blue"
+    ],
+    "stock": 11,
+    "isActive": true
+  },
+  {
+    "id": "demo_jacket_003",
+    "name": "Charcoal Cropped Jacket",
+    "description": "A cropped jacket with a structured shape and understated detailing. Pair it with high-waisted trousers or your favourite denim.",
+    "price": 82.99,
+    "category": "Jackets",
+    "imagePaths": [
+      "assets/images/products/jackets/charcoal-cropped-jacket.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L"
+    ],
+    "colors": [
+      "Charcoal",
+      "Taupe"
+    ],
+    "stock": 7,
+    "isActive": true
+  },
+  {
+    "id": "demo_shoes_001",
+    "name": "Ivory Slingback Heels",
+    "description": "Elegant slingback heels with a refined pointed toe and low-profile heel. A polished option for occasions and everyday outfits.",
+    "price": 69,
+    "category": "Shoes",
+    "imagePaths": [
+      "assets/images/products/shoes/ivory-slingback-heels.png"
+    ],
+    "sizes": [
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41"
+    ],
+    "colors": [
+      "Ivory",
+      "Black"
+    ],
+    "stock": 16,
+    "isActive": true
+  },
+  {
+    "id": "demo_shoes_002",
+    "name": "Blush Everyday Sneakers",
+    "description": "A clean everyday sneaker with a cushioned sole and soft blush accents. Adds a subtle touch of colour to relaxed looks.",
+    "price": 54.5,
+    "category": "Shoes",
+    "imagePaths": [
+      "assets/images/products/shoes/blush-everyday-sneakers.png"
+    ],
+    "sizes": [
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41"
+    ],
+    "colors": [
+      "Blush",
+      "White"
+    ],
+    "stock": 22,
+    "isActive": true
+  },
+  {
+    "id": "demo_shoes_003",
+    "name": "Black Ankle Boots",
+    "description": "A versatile ankle boot with a simple upper and sturdy low heel. A dependable staple for cooler days and smart-casual outfits.",
+    "price": 94,
+    "category": "Shoes",
+    "imagePaths": [
+      "assets/images/products/shoes/black-ankle-boots.png"
+    ],
+    "sizes": [
+      "36",
+      "37",
+      "38",
+      "39",
+      "40"
+    ],
+    "colors": [
+      "Black",
+      "Chocolate"
+    ],
+    "stock": 8,
+    "isActive": true
+  },
+  {
+    "id": "demo_bag_001",
+    "name": "Mini Rose Shoulder Bag",
+    "description": "A compact shoulder bag with a softly curved silhouette and neat top handle. Just the right size for daily essentials.",
+    "price": 49.99,
+    "category": "Bags",
+    "imagePaths": [
+      "assets/images/products/bags/mini-rose-shoulder-bag.png"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "colors": [
+      "Dusty Rose",
+      "Cream"
+    ],
+    "stock": 20,
+    "isActive": true
+  },
+  {
+    "id": "demo_bag_002",
+    "name": "Everyday Ivory Tote",
+    "description": "A roomy tote with a clean shape and comfortable shoulder straps. A practical companion for work, shopping, and weekends.",
+    "price": 62,
+    "category": "Bags",
+    "imagePaths": [
+      "assets/images/products/bags/ivory-tote-bag.png"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "colors": [
+      "Ivory",
+      "Tan"
+    ],
+    "stock": 15,
+    "isActive": true
+  },
+  {
+    "id": "demo_bag_003",
+    "name": "Burgundy Crossbody Bag",
+    "description": "A compact crossbody bag with a structured flap and adjustable strap. Its deep burgundy tone adds a rich accent to neutral looks.",
+    "price": 57,
+    "category": "Bags",
+    "imagePaths": [
+      "assets/images/products/bags/burgundy-crossbody-bag.png"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "colors": [
+      "Burgundy",
+      "Black"
+    ],
+    "stock": 10,
+    "isActive": true
+  },
+  {
+    "id": "demo_top_001",
+    "name": "Soft Knit Top",
+    "description": "A lightweight knit top with a relaxed fit and soft texture. An easy layering essential with denim and tailored trousers.",
+    "price": 38,
+    "category": "Tops",
+    "imagePaths": [
+      "assets/images/products/tops/soft-knit-top.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Oatmeal",
+      "Rose",
+      "Black"
+    ],
+    "stock": 25,
+    "isActive": true
+  },
+  {
+    "id": "demo_top_002",
+    "name": "Satin Button Blouse",
+    "description": "A fluid blouse with a classic button front and softly draped finish. A versatile option for work, dinners, and elevated everyday wear.",
+    "price": 45.5,
+    "category": "Tops",
+    "imagePaths": [
+      "assets/images/products/tops/satin-button-blouse.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L"
+    ],
+    "colors": [
+      "Champagne",
+      "Ivory"
+    ],
+    "stock": 17,
+    "isActive": true
+  },
+  {
+    "id": "demo_top_003",
+    "name": "Ribbed Square-Neck Top",
+    "description": "A fitted ribbed top with a flattering square neckline and comfortable stretch. A simple foundation piece for layering or wearing alone.",
+    "price": 29.99,
+    "category": "Tops",
+    "imagePaths": [
+      "assets/images/products/tops/ribbed-square-neck-top.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Black",
+      "White",
+      "Dusty Rose"
+    ],
+    "stock": 30,
+    "isActive": true
+  },
+  {
+    "id": "demo_pants_001",
+    "name": "Wide-Leg Tailored Trousers",
+    "description": "High-waisted tailored trousers with a flowing wide leg and clean front. Pair with a fitted top or blazer for a refined look.",
+    "price": 68,
+    "category": "Pants",
+    "imagePaths": [
+      "assets/images/products/pants/wide-leg-trousers.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Taupe",
+      "Black"
+    ],
+    "stock": 13,
+    "isActive": true
+  },
+  {
+    "id": "demo_pants_002",
+    "name": "Straight Denim Jeans",
+    "description": "Classic straight-leg jeans with a comfortable mid-rise fit. An everyday staple that works with sneakers, flats, and heels.",
+    "price": 59,
+    "category": "Pants",
+    "imagePaths": [
+      "assets/images/products/pants/straight-denim-jeans.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Mid Blue",
+      "Dark Blue"
+    ],
+    "stock": 19,
+    "isActive": true
+  },
+  {
+    "id": "demo_pants_003",
+    "name": "Tailored Black Pants",
+    "description": "Straight tailored pants with a clean waistband and timeless black finish. A dependable choice for workwear and evening outfits.",
+    "price": 63.5,
+    "category": "Pants",
+    "imagePaths": [
+      "assets/images/products/pants/tailored-black-pants.png"
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "colors": [
+      "Black",
+      "Charcoal"
+    ],
+    "stock": 16,
+    "isActive": true
+  }
+]

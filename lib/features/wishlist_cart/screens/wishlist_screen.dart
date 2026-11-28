@@ -167,7 +167,7 @@ class _WishlistCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: ProductImage(url: product?.imageUrl),
+                    child: ProductImage(assetPath: product?.imagePath),
                   ),
                   Positioned(
                     top: 4,
