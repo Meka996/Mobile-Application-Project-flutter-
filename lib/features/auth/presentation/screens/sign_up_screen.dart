@@ -97,7 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       prefixIcon: Icon(icon, color: AppTheme.deepRose),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Theme.of(context).colorScheme.surface,
       contentPadding: const EdgeInsets.all(15),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -121,10 +121,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.offWhite,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Create Account'),
-        backgroundColor: AppTheme.offWhite,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: AppTheme.deepRose,
         elevation: 0,
       ),
