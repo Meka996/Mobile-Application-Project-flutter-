@@ -28,7 +28,7 @@ class CartItemTile extends StatelessWidget {
     final problem = line.problem;
 
     return Card(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
