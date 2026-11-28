@@ -15,12 +15,8 @@ service cloud.firestore {
     }
 
     function validCartFields(data) {
-      return data.keys().hasOnly([
-          'productId', 'size', 'color', 'quantity', 'updatedAt'
-        ])
-        && data.keys().hasAll([
-          'productId', 'size', 'color', 'quantity', 'updatedAt'
-        ])
+      return data.keys().hasOnly(['productId', 'size', 'color', 'quantity', 'updatedAt'])
+        && data.keys().hasAll(['productId', 'size', 'color', 'quantity', 'updatedAt'])
         && data.productId is string && data.productId.size() > 0
         && data.size is string && data.size.size() > 0
         && data.color is string && data.color.size() > 0
@@ -40,7 +36,13 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow write: if false;
+      // Demo checkout can only decrease stock; other product fields stay protected.
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
+        && request.resource.data.stock is int
+        && request.resource.data.stock >= 0
+        && request.resource.data.stock < resource.data.stock;
+      allow create, delete: if false;
     }
 
     match /users/{userId} {
@@ -65,36 +67,30 @@ service cloud.firestore {
 
       match /cart/{itemId} {
         allow read, delete: if isOwner(userId);
-
-        // New and increased quantities must fit the current stock.
         allow create: if isOwner(userId)
           && validCartFields(request.resource.data)
-          && validCartProduct(
-            request.resource.data.productId,
-            request.resource.data.quantity
-          );
-
-        // A user may always reduce an existing line, even if the product
-        // was subsequently deactivated or deleted. Increases re-check stock.
+          && validCartProduct(request.resource.data.productId, request.resource.data.quantity);
         allow update: if isOwner(userId)
           && validCartFields(request.resource.data)
-          && (
-            (
-              request.resource.data.diff(resource.data).affectedKeys()
-                .hasOnly(['quantity', 'updatedAt'])
-              && request.resource.data.quantity < resource.data.quantity
-            )
-            || validCartProduct(
-              request.resource.data.productId,
-              request.resource.data.quantity
-            )
-          );
+          && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity', 'updatedAt'])
+                && request.resource.data.quantity < resource.data.quantity)
+              || validCartProduct(request.resource.data.productId, request.resource.data.quantity));
       }
 
       match /orders/{orderId} {
         allow read: if isOwner(userId);
-        // Only the trusted server using the Admin SDK may create orders.
-        allow create, update, delete: if false;
+        // Demo orders are created by the signed-in user's Flutter transaction.
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['items', 'total', 'status', 'createdAt'])
+          && request.resource.data.keys().hasAll(['items', 'total', 'status', 'createdAt'])
+          && request.resource.data.items is list
+          && request.resource.data.items.size() > 0
+          && request.resource.data.items.size() <= 20
+          && request.resource.data.total is number
+          && request.resource.data.total > 0
+          && request.resource.data.status == 'placed'
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
       }
     }
   }
