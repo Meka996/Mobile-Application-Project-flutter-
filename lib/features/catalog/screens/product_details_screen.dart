@@ -36,10 +36,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final hasImages = product.imagePaths.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Product Details', style: TextStyle(color: Color(0xFFC45D75), fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFFFFF8F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFFC45D75)),
         centerTitle: true,
