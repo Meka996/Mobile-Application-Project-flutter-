@@ -12,7 +12,7 @@ ProductInfo product({
     id: id,
     name: 'Dress',
     price: price,
-    imageUrl: null,
+    imagePath: null,
     isActive: isActive,
     stock: stock,
   );
@@ -122,19 +122,19 @@ void main() {
       final p = ProductInfo.fromMap('p1', {
         'name': 'Blazer',
         'price': 129,
-        'imageUrls': ['https://x/1.jpg', 'https://x/2.jpg'],
+        'imagePaths': ['assets/images/products/1.png', 'assets/images/products/2.png'],
         'isActive': true,
         'stock': 4,
       });
       expect(p.name, 'Blazer');
       expect(p.price, 129.0);
-      expect(p.imageUrl, 'https://x/1.jpg');
+      expect(p.imagePath, 'assets/images/products/1.png');
       expect(p.isPurchasable, isTrue);
     });
 
     test('missing or bad fields are treated as unavailable', () {
       final p = ProductInfo.fromMap('p1', {'name': 5, 'price': 'free'});
-      expect(p.imageUrl, isNull);
+      expect(p.imagePath, isNull);
       expect(p.isPurchasable, isFalse);
     });
   });

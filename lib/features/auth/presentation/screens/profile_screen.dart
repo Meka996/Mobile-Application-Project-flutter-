@@ -349,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: const Text('Dark Mode'),
                           subtitle: const Text('Change the app appearance'),
                           value: isDark,
-                          activeColor: AppTheme.deepRose,
+                          activeThumbColor: AppTheme.deepRose,
                           onChanged: (value) => AppTheme.isDarkMode.value = value,
                         ),
                       ),
