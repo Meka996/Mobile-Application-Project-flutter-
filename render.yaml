@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: velora-order-api
+    runtime: node
+    rootDir: functions
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: FIREBASE_PROJECT_ID
+        value: velora-fashion-store-a181a
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

@@ -1,59 +1,75 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/order_model.dart';
 
-/// Creates orders through a trusted Firebase callable function.
-/// The server reloads the cart/catalogue, validates stock and prices,
-/// decrements inventory and clears the cart in one Firestore transaction.
+/// Sends order requests to the trusted VELORA API. The API verifies the
+/// Firebase ID token and performs all price/stock checks with the Admin SDK.
 class OrderRepository {
   OrderRepository({
-    FirebaseFunctions? functions,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
-  })  : _functions = functions ?? FirebaseFunctions.instanceFor(region: 'europe-west3'),
-        _auth = auth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+    http.Client? client,
+  })  : _auth = auth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _client = client ?? http.Client();
 
-  final FirebaseFunctions _functions;
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final http.Client _client;
+
+  static const String _apiBaseUrl = String.fromEnvironment(
+    'ORDER_API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:3000',
+  );
 
   CollectionReference<Map<String, dynamic>> _ordersCol(String uid) =>
       _firestore.collection('users').doc(uid).collection('orders');
 
   Future<String> placeOrder() async {
-    if (_auth.currentUser == null) {
-      throw Exception('User not signed in');
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('Please sign in before placing an order.');
+    final baseUrl = _apiBaseUrl.trim().replaceFirst(RegExp(r'/+$'), '');
+    if (baseUrl.isEmpty) throw Exception('Order API URL is not configured.');
+    final token = await user.getIdToken(true);
+    if (token == null || token.isEmpty) throw Exception('Could not verify your session. Please sign in again.');
+
+    final response = await _client.post(
+      Uri.parse(baseUrl + '/orders'),
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: '{}',
+    );
+    Map<String, dynamic> data = {};
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) data = decoded;
+    } catch (_) {}
+    if (response.statusCode != 201) {
+      throw Exception(data['error'] is String ? data['error'] as String : 'Order request failed (' + response.statusCode.toString() + ').');
     }
-    final callable = _functions.httpsCallable('placeOrder');
-    final result = await callable.call();
-    final data = result.data;
-    if (data is! Map || data['orderId'] is! String ||
-        (data['orderId'] as String).isEmpty) {
-      throw Exception('The server returned an invalid order response.');
-    }
-    return data['orderId'] as String;
+    final orderId = data['orderId'];
+    if (orderId is! String || orderId.isEmpty) throw Exception('The order API returned an invalid response.');
+    return orderId;
   }
 
-  /// Stream this user's orders, newest first.
   Stream<List<OrderModel>> ordersStream() {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return const Stream.empty();
-    return _ordersCol(uid)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
+    return _ordersCol(uid).orderBy('createdAt', descending: true).snapshots()
         .map((snapshot) => snapshot.docs.map(OrderModel.fromDoc).toList());
   }
 
-  /// One-time order history fetch.
   Future<List<OrderModel>> fetchOrders() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return [];
-    final snapshot = await _ordersCol(uid)
-        .orderBy('createdAt', descending: true)
-        .get();
+    final snapshot = await _ordersCol(uid).orderBy('createdAt', descending: true).get();
     return snapshot.docs.map(OrderModel.fromDoc).toList();
   }
 }

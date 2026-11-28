@@ -1,14 +1,20 @@
 {
-  "name": "velora-functions",
-  "description": "Trusted backend functions for VELORA",
+  "name": "velora-order-api",
+  "version": "1.0.0",
+  "description": "Trusted order API for VELORA",
   "private": true,
-  "main": "index.js",
-  "engines": { "node": "22" },
+  "main": "server.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "lint": "node --check index.js"
+    "start": "node server.js",
+    "check": "node --check server.js"
   },
   "dependencies": {
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "firebase-admin": "^13.0.0",
-    "firebase-functions": "^6.3.0"
+    "helmet": "^8.1.0"
   }
 }
