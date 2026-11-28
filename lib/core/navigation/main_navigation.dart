@@ -32,8 +32,6 @@ class _MainNavigationState extends State<MainNavigation> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
-  // ---- Task C -> Task D: Product Details callbacks ----------------------
-
   Future<void> _addToCart(Product product, String? size, String? color) async {
     if (FirebaseAuth.instance.currentUser == null) {
       _say('Please sign in from the Profile tab first.');
@@ -76,7 +74,6 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  // The wishlist only knows the product id, so load the product first.
   Future<void> _openProductById(String productId) async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -94,8 +91,6 @@ class _MainNavigationState extends State<MainNavigation> {
       _say(friendlyError(error));
     }
   }
-
-  // ---- Task D -> Task E: checkout hand-off -------------------------------
 
   void _openCart() {
     Navigator.of(context).push(
@@ -153,24 +148,17 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppTheme.offWhite,
-        selectedItemColor: AppTheme.deepRose,
-        unselectedItemColor: Colors.grey,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white60
+            : Colors.grey,
         onTap: _select,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view_outlined),
-            label: 'Shop',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            label: 'Wishlist',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.grid_view_outlined), label: 'Shop'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Wishlist'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
     );

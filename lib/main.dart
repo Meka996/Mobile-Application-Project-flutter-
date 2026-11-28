@@ -18,11 +18,18 @@ class VeloraApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'VELORA',
-      theme: AppTheme.lightTheme,
-      home: const MainNavigation(),
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppTheme.isDarkMode,
+      builder: (context, isDark, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'VELORA',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+          home: const MainNavigation(),
+        );
+      },
     );
   }
 }
