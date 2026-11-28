@@ -248,10 +248,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: AppTheme.offWhite,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('My Profile'),
-        backgroundColor: AppTheme.offWhite,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: AppTheme.deepRose,
         elevation: 0,
         actions: [
@@ -396,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
   }) {
     return Card(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
